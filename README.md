@@ -40,7 +40,8 @@ Traditional operational HR systems overwrite past state whenever an employee is 
 <!-- ================================================================= -->
 
 <div align="center">
-  <img src="docs/architecture_placeholder.png" alt="SkillFlow Architecture Diagram" width="850" />
+  <img width="1171" height="492" alt="Screenshot 2026-10-07 102224" src="https://github.com/user-attachments/assets/bb82ef42-a025-4cf2-b27b-4eefb4a83567" />
+
   <p><em>Figure 1: SkillFlow End-to-End Enterprise Architecture & Pipeline</em></p>
 </div>
 
