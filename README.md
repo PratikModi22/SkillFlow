@@ -74,18 +74,21 @@ Traditional operational HR systems overwrite past state whenever an employee is 
 
 ---
 
-## 🔐 Role-Based Access Control (RBAC)
+## 🔐 Role-Based Access Control (RBAC) & Authentication Portal
 
-SkillFlow enforces a comprehensive four-tier security architecture implemented in `src/rbac.py` and guarded at both the UI and Data Access Layer:
+SkillFlow enforces a comprehensive four-tier security architecture implemented in `src/rbac.py` and guarded at both the presentation layer and the Data Access Layer (DAL). Unauthorized requests are completely blocked by an authentication session gate (`st.session_state['authenticated']`).
 
-| Security Role | Allowed Navigation Scope | Permitted Operations |
-| :--- | :--- | :--- |
-| **👑 HR Administrator** | `Dashboard`, `Employees`, `Projects`, `Reviews`, `Warehouse` | **Full Read & Write**: Onboard employees, execute SCD2 department transfers, create projects, assign staff, submit reviews, and trigger warehouse delta syncs. |
-| **👥 Department Manager** | `Dashboard`, `Employees`, `Projects`, `Reviews` | **Operational Write**: Transfer employees (SCD2), assign project personnel, and submit reviews. Protected from DW ETL rebuilds. |
-| **📊 Data Analyst (Auditor)** | Full read access across all 5 sections | **Strict Read-Only**: Access to all dashboards, drill-down tables, audit logs, and SCD2 timelines. Write forms are locked with security cards. |
-| **👤 Standard Employee** | `Employees` (Directory) & `Projects` (Rosters) | **Self-Service Only**: Sensitive executive attrition modeling, compensation distributions, and warehouse internal health tables are hidden. |
+### 🚀 1-Click Demo Personas & Corporate Test Accounts
+The application gateway features an authentic login screen with both **1-click evaluator persona cards** and corporate credential login:
 
-> **Interactive Role Switcher:** The sidebar features a live role selector and user profile badge (`👤 Pratik Modi`) enabling evaluators to test permission enforcement dynamically.
+| Role | Corporate Email | Password | Access Scope & Allowed Pages | Key Capabilities |
+| :--- | :--- | :--- | :--- | :--- |
+| **👑 HR Administrator** | `admin@skillflow.com` | `admin` | `Dashboard`, `Employees`, `Projects`, `Reviews`, `Warehouse` | **Full Read & Write**: Onboard employees (atomic dual-write), SCD2 department transfers, create projects, assign staff, submit reviews, and trigger warehouse delta syncs. |
+| **👥 Department Manager** | `manager@skillflow.com` | `manager` | `Dashboard`, `Employees`, `Projects`, `Reviews` | **Operational Management**: View team performance, transfer department staff, assign project capacity, and conduct appraisals. Protected from DW maintenance. |
+| **📊 Data Analyst (Auditor)** | `auditor@skillflow.com` | `audit` | `Dashboard`, `Employees`, `Projects`, `Reviews`, `Warehouse` | **Strict Read-Only Audit**: Complete visibility across all dashboards, historical review trends, SCD2 audit trails, and reconciliation logs. All write forms are locked. |
+| **👤 Standard Employee** | `employee@skillflow.com` | `emp` | `Employees` (Directory) & `Projects` (Rosters) | **Self-Service**: View company directory, assigned project rosters, and personal profile. Executive metrics and data warehouse internals are hidden. |
+
+> **Evaluator Live Persona Switcher:** Once logged in, the sidebar includes an active profile card and a collapsible **"⚡ Switch Demo Persona"** widget, allowing reviewers to jump between roles dynamically without signing out.
 
 ---
 
@@ -206,21 +209,65 @@ DB_NAME=employee_analytics_dw
 DATABASE_URL=mysql+pymysql://root:your_mysql_password@localhost:3306/employee_analytics_dw
 ```
 
-### 5. Run Database Migration & Pipeline
-Generate synthetic data and populate the database:
+### 5. ETL Pipeline & Data Warehouse Operations
+
+The complete end-to-end data pipeline is automated and verified via `etl/run_pipeline.py`. It executes the full data lifecycle:
+1. **Schema DDL & Stored Procedures**: Compiles staging, OLTP 3NF, Kimball Star Schema dimensions/facts, and analytical views (`02_create_staging.sql` to `07_dashboard_queries.sql` and `10_incremental_loads.sql`).
+2. **Chunked Staging Ingestion**: Loads raw synthesized CSVs into `stg_*` tables with batch control tracking (`stg_load_batches`).
+3. **Master ETL Stored Procedures**:
+   - `CALL sp_load_oltp_master()`: Migrates clean staging records into normalized 3NF OLTP tables (`departments`, `employees`, `projects`, `performance_reviews`).
+   - `CALL sp_load_dw_master()`: Populates Kimball dimensions (`dim_department`, `dim_project`, `dim_employee` with SCD Type 2 tracking) and point-in-time fact table (`fact_performance_reviews`).
+4. **Column Key Optimization**: Executes `09_alter_fixed_length_columns.sql` for fixed `CHAR` primary/foreign key performance alignments.
+5. **Analytical Index Tuning**: Applies `08_create_indexes.sql` to construct optimized B-tree compound indexes for fast view evaluations.
+6. **Automated Reconciliation**: Asserts dimensional invariants and compares OLTP row counts against Star Schema dimensions.
+
+#### Essential Pipeline Commands:
+
 ```bash
-# Generate synthetic dataset:
+# =====================================================================
+# Option A: Full First-Time Setup & Database Rebuild (Recommended)
+# Drops any existing database, re-creates all tables/views/procedures,
+# chunk-loads staging CSVs, and executes master OLTP/DW ETL stored procedures.
+# =====================================================================
+python etl/run_pipeline.py --reset --load
+
+# =====================================================================
+# Option B: Idempotent Warehouse Refresh (Without Dropping Database)
+# Safely reloads staging and synchronizes the Star Schema.
+# App-created employees and SCD2 transfer records are preserved via UPSERT.
+# =====================================================================
+python etl/run_pipeline.py --load
+
+# =====================================================================
+# Option C: Re-generate Synthetic Benchmark Datasets
+# Generates 15,000 employees, 19,900+ SCD2 versions, and 38,000+ reviews
+# seeded from the IBM HR Analytics benchmark.
+# =====================================================================
 python synthetic_data_generator.py
 
-# Execute full pipeline (staging -> OLTP -> Star Schema):
-python etl/run_pipeline.py --reset
+# =====================================================================
+# Option D: Standalone Staging Loader
+# Loads raw CSVs from /synthetic_data directly into MySQL stg_* tables.
+# =====================================================================
+python etl/load_staging.py
 ```
+
+#### Master Stored Procedures Reference:
+
+| Stored Procedure | Source -> Target | Scope | Description |
+| :--- | :--- | :--- | :--- |
+| `sp_load_oltp_master()` | Staging -> OLTP | Batch Master | Migrates clean staging records into normalized 3NF operational tables with referential integrity enforcement. |
+| `sp_load_dw_master()` | OLTP -> OLAP | Batch Master | Master orchestrator invoking dimension loaders, point-in-time fact joins, and version reconciliation. |
+| `sp_load_dim_employee_scd2()` | Staging / OLTP -> `dim_employee` | SCD Type 2 | Inserts historical versions from staging and creates initial open records (`IsCurrent=1`) for active employees. |
+| `sp_load_fact_performance_reviews()` | OLTP -> `fact_performance_reviews` | Point-in-Time Fact | Joins each appraisal to the exact `dim_employee` version active on that review's `ReviewDate`. |
+| `sp_apply_employee_change()` | Streamlit App -> OLTP & `dim_employee` | Atomic Dual-Write | Real-time procedure that updates the employee in OLTP, closes their previous SCD2 dimension row (`EffectiveEndDate`), and inserts a new active version. |
+| `sp_reconcile_dw()` | OLTP <-> OLAP | Audit & Drift | Validates record counts across operational tables and star schema dimensions, logging results to `dw_load_log`. |
 
 ### 6. Launch Application
 ```bash
 streamlit run app.py
 ```
-Open your browser at `http://localhost:8501` to access the dashboard.
+Open your browser at `http://localhost:8501`. Use one of the **1-click demo persona cards** (e.g. `👑 HR Admin`) to enter the dashboard.
 
 ---
 
