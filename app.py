@@ -31,10 +31,17 @@ from datetime import date
 
 import pandas as pd
 import plotly.express as px
+import pymysql
+
+try:
+    pymysql.install_as_MySQLdb()
+except Exception:
+    pass
+
 import streamlit as st
 
 from src.dal import AnalyticsManager, EmployeeManager, ProjectManager, ReviewManager
-from src.db_manager import DatabaseConnection
+from src.db_manager import DatabaseConnection, resolve_database_url
 from src.models import Employee, Project, Review
 from src.notifications import AssignmentNotifier, MailSettings
 from src.rbac import DEMO_USERS, RBAC, Permission, User, UserRole
@@ -408,39 +415,12 @@ st.markdown(
 # --------------------------------------------------------------------------
 
 
-def resolve_database_url() -> str:
-    """
-    [CORE / IMPORTANT FUNCTION]
-    Resolves MySQL connection string in strict priority order:
-    1. Streamlit secrets (.streamlit/secrets.toml or Streamlit Community Cloud Secrets)
-    2. OS Environment variable (DATABASE_URL)
-    3. Project fallback default
-
-    Returns:
-    --------
-    str
-        Active MySQL database URL connection string.
-    """
-    try:
-        url = st.secrets.get("DATABASE_URL")
-        if url:
-            return str(url).strip()
-    except Exception:
-        pass
-    url = os.getenv("DATABASE_URL")
-    if url:
-        return str(url).strip()
-    return DEFAULT_DB_URL.strip() if DEFAULT_DB_URL else ""
-
-
 @st.cache_resource(show_spinner=False)
-def get_managers(profile: str = "local") -> tuple:
+def get_managers(db_url: str = "") -> tuple:
     """
     [CORE / IMPORTANT FUNCTION]
     Cached resource factory that instantiates the 4 Data Access Layer managers
-    backed by the dedicated Singleton DatabaseConnection for the requested profile:
-    - 'local' : Local MySQL server (127.0.0.1:3306)
-    - 'hosted': Cloud MySQL server (Aiven MySQL)
+    backed by the single thread-safe DatabaseConnection singleton.
 
     Why `@st.cache_resource` is essential:
     --------------------------------------
@@ -448,7 +428,7 @@ def get_managers(profile: str = "local") -> tuple:
     Caching the managers ensures that the Singleton connection pool and cached statements
     persist across reruns without reconnecting to MySQL on every interaction.
     """
-    db = DatabaseConnection.for_environment(profile)
+    db = DatabaseConnection(db_url or resolve_database_url())
     employees = EmployeeManager(db)
     projects = ProjectManager(db)
     reviews = ReviewManager(db)
@@ -1042,49 +1022,27 @@ if st.sidebar.button("Sign Out", use_container_width=True):
 
 st.sidebar.divider()
 
-is_cloud_env = (
-    "STREAMLIT_SHARING_MODE" in os.environ
-    or "STREAMLIT_SERVER_ENVIRONMENT" in os.environ
-    or os.getenv("DEPLOYMENT_ENV") == "hosted"
-    or not os.path.exists(".env")
-)
-
-st.sidebar.markdown(
-    "<div style='font-size: 0.74rem; text-transform: uppercase; font-weight: 700; opacity: 0.7; letter-spacing: 0.5px; margin-bottom: 2px;'>"
-    "Connection Profile</div>",
-    unsafe_allow_html=True,
-)
-db_choice = st.sidebar.radio(
-    "Target Connection",
-    ["Local (127.0.0.1:3306)", "Hosted (Aiven Cloud)"],
-    index=1 if is_cloud_env else 0,
-    label_visibility="collapsed",
-    key="db_env_profile",
-)
-
-active_profile = "hosted" if "Hosted" in db_choice else "local"
-
-employees_mgr, projects_mgr, reviews_mgr, analytics_mgr = get_managers(
-    active_profile
-)
+db_url = resolve_database_url()
+employees_mgr, projects_mgr, reviews_mgr, analytics_mgr = get_managers(db_url)
 
 connected = analytics_mgr.is_alive()
-profile_name = "Local (127.0.0.1)" if active_profile == "local" else "Hosted (Aiven Cloud)"
 
 if connected:
     st.sidebar.markdown(
-        f"<div style='font-size: 0.8rem; opacity: 0.85; display: flex; align-items: center; gap: 6px; margin: 6px 0;'>"
-        f"<span style='width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;'></span>"
-        f"<b>Database:</b> {profile_name} Connected</div>",
+        "<div style='font-size: 0.8rem; opacity: 0.85; display: flex; align-items: center; gap: 6px; margin: 6px 0;'>"
+        "<span style='width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;'></span>"
+        "<b>Database:</b> Connected</div>",
         unsafe_allow_html=True,
     )
 else:
+    last_err = analytics_mgr.get_last_error() or "Unable to reach database server"
     st.sidebar.markdown(
-        f"<div style='font-size: 0.8rem; opacity: 0.85; display: flex; align-items: center; gap: 6px; margin: 6px 0;'>"
-        f"<span style='width: 8px; height: 8px; border-radius: 50%; background: #ef4444; display: inline-block;'></span>"
-        f"<b>Database:</b> {profile_name} Failed</div>",
+        "<div style='font-size: 0.8rem; opacity: 0.85; display: flex; align-items: center; gap: 6px; margin: 6px 0;'>"
+        "<span style='width: 8px; height: 8px; border-radius: 50%; background: #ef4444; display: inline-block;'></span>"
+        "<b>Database:</b> Connection Failed</div>",
         unsafe_allow_html=True,
     )
+    st.sidebar.caption(f"Error: {last_err[:120]}...")
 
 PAGE_HOME = "Dashboard"
 PAGE_EMPLOYEES = "Employees"

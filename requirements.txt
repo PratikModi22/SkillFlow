@@ -1,6 +1,7 @@
 # Database
 PyMySQL==1.2.3
 SQLAlchemy==2.1.2
+cryptography>=42.0.0
 
 # Data synthesis
 pandas==2.2.3

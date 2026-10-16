@@ -20,6 +20,13 @@ import urllib.parse
 from datetime import datetime
 
 import pandas as pd
+import pymysql
+
+try:
+    pymysql.install_as_MySQLdb()
+except Exception:
+    pass
+
 from sqlalchemy import create_engine, text
 
 # --------------------------------------------------------------------------
@@ -46,6 +53,9 @@ def _prepare_engine_url_and_args(raw_url: str) -> tuple[str, dict]:
     """Normalizes database URL and configures SSL connect_args for PyMySQL."""
     if not raw_url:
         return raw_url, {}
+
+    if raw_url.startswith("mysql://"):
+        raw_url = "mysql+pymysql://" + raw_url[len("mysql://") :]
 
     parsed = urllib.parse.urlparse(raw_url)
     query_params = urllib.parse.parse_qs(parsed.query)
