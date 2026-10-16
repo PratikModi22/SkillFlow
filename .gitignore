@@ -1,0 +1,15 @@
+venv/
+.venv/
+env/
+.env/
+
+data/
+synthetic_data/
+
+.env
+__pycache__/
+*.pyc
+.DS_Store
+.vscode/
+.idea/
+.streamlit/secrets.toml

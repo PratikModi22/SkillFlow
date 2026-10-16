@@ -1,0 +1,267 @@
+<mxfile host="app.diagrams.net" agent="opencode" version="24.7.17" type="device">
+  <diagram id="oltp-er-employee-analytics" name="OLTP ER Diagram">
+    <mxGraphModel dx="1920" dy="1400" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="OLTP Relational Model - Enterprise Employee Analytics&#10;Schema: employee_analytics_dw | 3NF, natural (surrogate-free) keys, InnoDB" style="text;html=1;align=left;verticalAlign=middle;fontSize=22;fontStyle=1;fontColor=#0F2E4A;" vertex="1" parent="1">
+          <mxGeometry x="60" y="24" width="1200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Source: database/03_create_oltp.sql &#183; 5 tables &#183; 7 foreign keys &#183; 4 CHECK constraints &#183; Departments and Projects are SCD Type 1 here - employee history lives in the warehouse." style="text;html=1;align=left;verticalAlign=top;fontSize=12;fontColor=#44546A;" vertex="1" parent="1">
+          <mxGeometry x="60" y="88" width="1200" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend" value="" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#B4C6E7;dashed=0;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="24" width="460" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_h" value="LEGEND" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontStyle=1;fontColor=#0F2E4A;" vertex="1" parent="1">
+          <mxGeometry x="1416" y="32" width="200" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_pk" value="PK" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=12;fontStyle=1;fillColor=#DDEBF7;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="1416" y="56" width="90" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_pk_t" value="Primary key" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="1512" y="56" width="200" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_uk" value="UK" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=12;fontStyle=1;fillColor=#E2EFDA;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="1416" y="82" width="90" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_uk_t" value="Unique key / business rule" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="1512" y="82" width="240" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_fk" value="FK" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=12;fontStyle=3;fillColor=#FCE4D6;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="1416" y="108" width="90" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_fk_t" value="Foreign key" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="1512" y="108" width="200" height="22" as="geometry" />
+        </mxCell>
+
+        <mxCell id="t_departments" value="departments" style="swimlane;html=1;startSize=34;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#FFFFFF;fillColor=#1F4E79;strokeColor=#0F2E4A;swimlaneFillColor=#FFFFFF;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="60" y="170" width="300" height="134" as="geometry" />
+        </mxCell>
+        <mxCell id="t_departments_c1" value="PK  DepartmentID &#183; CHAR(8)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;fontStyle=1;fillColor=#DDEBF7;strokeColor=none;container=0;" vertex="1" parent="t_departments">
+          <mxGeometry x="0" y="34" width="300" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_departments_c2" value="UK  DepartmentName &#183; VARCHAR(100)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;fillColor=#E2EFDA;strokeColor=none;container=0;" vertex="1" parent="t_departments">
+          <mxGeometry x="0" y="60" width="300" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_departments_c3" value="DepartmentStatus &#183; VARCHAR(30)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_departments">
+          <mxGeometry x="0" y="86" width="300" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_departments_n1" value="uq_departments_name UNIQUE (DepartmentName)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=11;fontStyle=2;fontColor=#7F7F7F;container=0;" vertex="1" parent="t_departments">
+          <mxGeometry x="0" y="112" width="300" height="22" as="geometry" />
+        </mxCell>
+
+        <mxCell id="t_employees" value="employees" style="swimlane;html=1;startSize=34;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#FFFFFF;fillColor=#1F4E79;strokeColor=#0F2E4A;swimlaneFillColor=#FFFFFF;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="60" y="380" width="340" height="420" as="geometry" />
+        </mxCell>
+        <mxCell id="t_employees_c1" value="PK  EmployeeID &#183; CHAR(11)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;fontStyle=1;fillColor=#DDEBF7;strokeColor=none;container=0;" vertex="1" parent="t_employees">
+          <mxGeometry x="0" y="34" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_employees_c2" value="UK  Email &#183; VARCHAR(255)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;fillColor=#E2EFDA;strokeColor=none;container=0;" vertex="1" parent="t_employees">
+          <mxGeometry x="0" y="60" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_employees_c3" value="FirstName &#183; VARCHAR(100)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_employees">
+          <mxGeometry x="0" y="86" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_employees_c4" value="LastName &#183; VARCHAR(100)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_employees">
+          <mxGeometry x="0" y="112" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_employees_c5" value="PhoneNumber &#183; CHAR(10) NULL" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_employees">
+          <mxGeometry x="0" y="138" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_employees_c6" value="Gender &#183; VARCHAR(30) NULL" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_employees">
+          <mxGeometry x="0" y="164" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_employees_c7" value="HireDate &#183; DATE" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_employees">
+          <mxGeometry x="0" y="190" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_employees_c8" value="TerminationDate &#183; DATE NULL" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_employees">
+          <mxGeometry x="0" y="216" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_employees_c9" value="EmploymentStatus &#183; VARCHAR(30)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_employees">
+          <mxGeometry x="0" y="242" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_employees_c10" value="FK  DepartmentID &#183; CHAR(8)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;fontStyle=3;fillColor=#FCE4D6;strokeColor=none;container=0;" vertex="1" parent="t_employees">
+          <mxGeometry x="0" y="268" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_employees_c11" value="JobRole &#183; VARCHAR(100)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_employees">
+          <mxGeometry x="0" y="294" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_employees_c12" value="JobLevel &#183; INT DEFAULT 1" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_employees">
+          <mxGeometry x="0" y="320" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_employees_c13" value="MonthlyIncome &#183; DECIMAL(12,2)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_employees">
+          <mxGeometry x="0" y="346" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_employees_c14" value="FK  ManagerEmployeeID &#183; CHAR(11) NULL" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;fontStyle=3;fillColor=#FCE4D6;strokeColor=none;container=0;" vertex="1" parent="t_employees">
+          <mxGeometry x="0" y="372" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_employees_n1" value="fk_employees_department &#8594; departments" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=11;fontStyle=2;fontColor=#7F7F7F;container=0;" vertex="1" parent="t_employees">
+          <mxGeometry x="0" y="398" width="340" height="22" as="geometry" />
+        </mxCell>
+
+        <mxCell id="t_projects" value="projects" style="swimlane;html=1;startSize=34;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#FFFFFF;fillColor=#1F4E79;strokeColor=#0F2E4A;swimlaneFillColor=#FFFFFF;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="900" y="170" width="320" height="238" as="geometry" />
+        </mxCell>
+        <mxCell id="t_projects_c1" value="PK  ProjectID &#183; CHAR(10)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;fontStyle=1;fillColor=#DDEBF7;strokeColor=none;container=0;" vertex="1" parent="t_projects">
+          <mxGeometry x="0" y="34" width="320" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_projects_c2" value="ProjectName &#183; VARCHAR(255)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_projects">
+          <mxGeometry x="0" y="60" width="320" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_projects_c3" value="ProjectType &#183; VARCHAR(100) NULL" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_projects">
+          <mxGeometry x="0" y="86" width="320" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_projects_c4" value="ProjectStartDate &#183; DATE" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_projects">
+          <mxGeometry x="0" y="112" width="320" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_projects_c5" value="ProjectEndDate &#183; DATE NULL" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_projects">
+          <mxGeometry x="0" y="138" width="320" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_projects_c6" value="ProjectStatus &#183; VARCHAR(30)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_projects">
+          <mxGeometry x="0" y="164" width="320" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_projects_c7" value="FK  ProjectManagerEmployeeID &#183; CHAR(11) NULL" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;fontStyle=3;fillColor=#FCE4D6;strokeColor=none;container=0;" vertex="1" parent="t_projects">
+          <mxGeometry x="0" y="190" width="320" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_projects_n1" value="fk_projects_manager &#8594; employees" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=11;fontStyle=2;fontColor=#7F7F7F;container=0;" vertex="1" parent="t_projects">
+          <mxGeometry x="0" y="216" width="320" height="22" as="geometry" />
+        </mxCell>
+
+        <mxCell id="t_assignments" value="employee_project_assignments" style="swimlane;html=1;startSize=34;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#FFFFFF;fillColor=#1F4E79;strokeColor=#0F2E4A;swimlaneFillColor=#FFFFFF;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="900" y="480" width="360" height="308" as="geometry" />
+        </mxCell>
+        <mxCell id="t_assignments_c1" value="PK  AssignmentID &#183; CHAR(11)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;fontStyle=1;fillColor=#DDEBF7;strokeColor=none;container=0;" vertex="1" parent="t_assignments">
+          <mxGeometry x="0" y="34" width="360" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_assignments_c2" value="FK  EmployeeID &#183; CHAR(11)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;fontStyle=3;fillColor=#FCE4D6;strokeColor=none;container=0;" vertex="1" parent="t_assignments">
+          <mxGeometry x="0" y="60" width="360" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_assignments_c3" value="FK  ProjectID &#183; CHAR(10)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;fontStyle=3;fillColor=#FCE4D6;strokeColor=none;container=0;" vertex="1" parent="t_assignments">
+          <mxGeometry x="0" y="86" width="360" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_assignments_c4" value="AssignmentStartDate &#183; DATE" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_assignments">
+          <mxGeometry x="0" y="112" width="360" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_assignments_c5" value="AssignmentEndDate &#183; DATE NULL" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_assignments">
+          <mxGeometry x="0" y="138" width="360" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_assignments_c6" value="AssignmentRole &#183; VARCHAR(100) NULL" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_assignments">
+          <mxGeometry x="0" y="164" width="360" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_assignments_c7" value="AllocationPercentage &#183; DECIMAL(5,2)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;fillColor=#E2EFDA;strokeColor=none;container=0;" vertex="1" parent="t_assignments">
+          <mxGeometry x="0" y="190" width="360" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_assignments_c8" value="AssignmentStatus &#183; VARCHAR(30)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_assignments">
+          <mxGeometry x="0" y="216" width="360" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_assignments_n1" value="fk_assignments_employee &#8594; employees" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=11;fontStyle=2;fontColor=#7F7F7F;container=0;" vertex="1" parent="t_assignments">
+          <mxGeometry x="0" y="242" width="360" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="t_assignments_n2" value="fk_assignments_project &#8594; projects" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=11;fontStyle=2;fontColor=#7F7F7F;container=0;" vertex="1" parent="t_assignments">
+          <mxGeometry x="0" y="264" width="360" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="t_assignments_n3" value="uq_assignments_emp_proj (EmployeeID, ProjectID, AssignmentStartDate)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=11;fontStyle=2;fontColor=#7F7F7F;container=0;" vertex="1" parent="t_assignments">
+          <mxGeometry x="0" y="286" width="360" height="22" as="geometry" />
+        </mxCell>
+
+        <mxCell id="t_reviews" value="performance_reviews" style="swimlane;html=1;startSize=34;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#FFFFFF;fillColor=#1F4E79;strokeColor=#0F2E4A;swimlaneFillColor=#FFFFFF;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="900" y="860" width="340" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="t_reviews_c1" value="PK  ReviewID &#183; CHAR(12)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;fontStyle=1;fillColor=#DDEBF7;strokeColor=none;container=0;" vertex="1" parent="t_reviews">
+          <mxGeometry x="0" y="34" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_reviews_c2" value="FK  EmployeeID &#183; CHAR(11)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;fontStyle=3;fillColor=#FCE4D6;strokeColor=none;container=0;" vertex="1" parent="t_reviews">
+          <mxGeometry x="0" y="60" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_reviews_c3" value="ReviewDate &#183; DATE" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_reviews">
+          <mxGeometry x="0" y="86" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_reviews_c4" value="Rating &#183; DECIMAL(5,2)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;fillColor=#E2EFDA;strokeColor=none;container=0;" vertex="1" parent="t_reviews">
+          <mxGeometry x="0" y="112" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_reviews_c5" value="PerformanceScore &#183; DECIMAL(5,2)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;fillColor=#E2EFDA;strokeColor=none;container=0;" vertex="1" parent="t_reviews">
+          <mxGeometry x="0" y="138" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_reviews_c6" value="PromotionRecommendation &#183; VARCHAR(30)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;container=0;" vertex="1" parent="t_reviews">
+          <mxGeometry x="0" y="164" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_reviews_c7" value="FK  ReviewerEmployeeID &#183; CHAR(11) NULL" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=12;fontStyle=3;fillColor=#FCE4D6;strokeColor=none;container=0;" vertex="1" parent="t_reviews">
+          <mxGeometry x="0" y="190" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_reviews_n1" value="fk_reviews_employee &#8594; employees (subject)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=11;fontStyle=2;fontColor=#7F7F7F;container=0;" vertex="1" parent="t_reviews">
+          <mxGeometry x="0" y="216" width="340" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="t_reviews_n2" value="fk_reviews_reviewer &#8594; employees (reviewer)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=8;fontSize=11;fontStyle=2;fontColor=#7F7F7F;container=0;" vertex="1" parent="t_reviews">
+          <mxGeometry x="0" y="238" width="340" height="22" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_dept_emp" value="fk_employees_department&#10;has" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#376092;strokeWidth=2;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontSize=11;fontColor=#376092;" edge="1" parent="1" source="t_departments" target="t_employees">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_emp_self" value="fk_employees_manager&#10;reports to (self-referencing)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#C55A11;strokeWidth=2;endArrow=ERzeroToMany;endFill=0;startArrow=ERone;startFill=0;exitX=1;exitY=0.35;exitDx=0;exitDy=0;entryX=1;entryY=0.7;entryDx=0;entryDy=0;fontSize=11;fontColor=#C55A11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="t_employees" target="t_employees">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="520" y="525" />
+              <mxPoint x="520" y="675" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e_emp_proj" value="fk_projects_manager&#10;manages" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#376092;strokeWidth=2;endArrow=ERzeroToMany;endFill=0;startArrow=ERone;startFill=0;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.7;entryDx=0;entryDy=0;fontSize=11;fontColor=#376092;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="t_employees" target="t_projects">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="600" y="485" />
+              <mxPoint x="600" y="337" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e_emp_asg" value="fk_assignments_employee&#10;is allocated to" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#376092;strokeWidth=2;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=11;fontColor=#376092;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="t_employees" target="t_assignments">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="640" y="590" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e_proj_asg" value="fk_assignments_project&#10;has" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#376092;strokeWidth=2;endArrow=ERzeroToMany;endFill=0;startArrow=ERone;startFill=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontSize=11;fontColor=#376092;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="t_projects" target="t_assignments">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_emp_rev" value="fk_reviews_employee&#10;is reviewed in" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#376092;strokeWidth=2;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;exitX=1;exitY=0.85;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=11;fontColor=#376092;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="t_employees" target="t_reviews">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="640" y="737" />
+              <mxPoint x="640" y="990" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e_emp_rev_rev" value="fk_reviews_reviewer&#10;performs (optional)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#C55A11;strokeWidth=2;dashed=1;dashPattern=6 4;endArrow=ERzeroToOne;endFill=0;startArrow=ERzeroToMany;startFill=0;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;fontSize=11;fontColor=#C55A11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="t_employees" target="t_reviews">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="480" y="800" />
+              <mxPoint x="480" y="1140" />
+              <mxPoint x="880" y="1140" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="notes_box" value="" style="rounded=0;html=1;fillColor=#F7F9FC;strokeColor=#B4C6E7;" vertex="1" parent="1">
+          <mxGeometry x="480" y="170" width="360" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="notes_h" value="DESIGN NOTES" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontStyle=1;fontColor=#0F2E4A;" vertex="1" parent="1">
+          <mxGeometry x="496" y="178" width="200" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="notes_b" value="&#8226; 3NF - no transitive dependencies: employees stores DepartmentID but never DepartmentName.&#10;&#8226; Natural keys in OLTP (EMP-/DEPT-/PROJ-/ASG-/REV- CHAR(n)); surrogate keys are introduced only in the warehouse.&#10;&#8226; Self-referencing FK employees.ManagerEmployeeID &#8594; employees.EmployeeID.&#10;&#8226; CHECK constraints enforce AllocationPercentage 0-100, Rating 1-5, PerformanceScore 0-100 at the database, not only in Python.&#10;&#8226; CHECKs are also re-applied defensively by the ETL stored procedures (sp_load_assignments, sp_load_reviews)." style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=11;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="496" y="202" width="328" height="122" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

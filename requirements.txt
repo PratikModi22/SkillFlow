@@ -1,0 +1,14 @@
+# Database
+PyMySQL==1.2.3
+SQLAlchemy==2.1.2
+
+# Data synthesis
+pandas==2.2.3
+numpy==2.4.6
+Faker==37.6.0
+kagglehub==1.0.2
+
+# Web application
+streamlit==1.64.0
+plotly==7.1.0
+python-dotenv==1.2.4
