@@ -1,4 +1,4 @@
-# ⚡ SkillFlow: Enterprise Workforce Intelligence & Data Warehouse
+# SkillFlow: Enterprise Workforce Intelligence & Data Warehouse
 
 <div align="center">
 
