@@ -421,6 +421,13 @@ def main() -> int:
 
     connection = pymysql.connect(**conn_kwargs)
 
+    # Disable sql_require_primary_key for cloud databases (e.g. Aiven) that enforce PKs on staging tables
+    with connection.cursor() as cur:
+        try:
+            cur.execute("SET SESSION sql_require_primary_key = 0;")
+        except Exception:
+            pass
+
     try:
         if args.reset:
             print("=" * 60)

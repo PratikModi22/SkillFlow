@@ -16,11 +16,11 @@ Design notes
 
 import os
 import sys
+import urllib.parse
 from datetime import datetime
 
 import pandas as pd
 from sqlalchemy import create_engine, text
-import os
 
 # --------------------------------------------------------------------------
 # Configuration (override with environment variables)
@@ -39,7 +39,54 @@ DATA_DIR = os.getenv(
 CHUNK_SIZE = 1000
 SOURCE_SYSTEM = "Synthetic Data Generator"
 
-engine = create_engine(DB_URL, pool_pre_ping=True, pool_recycle=3600)
+_engine = None
+
+
+def _prepare_engine_url_and_args(raw_url: str) -> tuple[str, dict]:
+    """Normalizes database URL and configures SSL connect_args for PyMySQL."""
+    if not raw_url:
+        return raw_url, {}
+
+    parsed = urllib.parse.urlparse(raw_url)
+    query_params = urllib.parse.parse_qs(parsed.query)
+
+    needs_ssl = (
+        any(k in query_params for k in ("ssl", "ssl_mode", "ssl-mode"))
+        or (parsed.hostname and parsed.hostname not in ("localhost", "127.0.0.1"))
+    )
+
+    for k in ("ssl_mode", "ssl-mode"):
+        query_params.pop(k, None)
+
+    clean_query = urllib.parse.urlencode(
+        [(k, val) for k, vals in query_params.items() for val in vals]
+    )
+    clean_url = urllib.parse.urlunparse(parsed._replace(query=clean_query))
+
+    connect_args = {}
+    if needs_ssl:
+        connect_args["ssl"] = {"check_hostname": False}
+
+    return clean_url, connect_args
+
+
+def get_engine():
+    """Lazily creates and returns SQLAlchemy engine with SSL support."""
+    global _engine
+    if _engine is None:
+        url = os.getenv("DATABASE_URL") or DB_URL
+        if not url:
+            raise ValueError(
+                "DATABASE_URL is not set. Specify it in your environment or secrets."
+            )
+        clean_url, connect_args = _prepare_engine_url_and_args(url)
+        _engine = create_engine(
+            clean_url,
+            connect_args=connect_args,
+            pool_pre_ping=True,
+            pool_recycle=3600,
+        )
+    return _engine
 
 # file -> (staging table, columns that must be parsed as dates)
 FILES = {
@@ -79,7 +126,7 @@ FILES = {
 
 def get_table_columns(table_name):
     """Return the list of real column names on a staging table."""
-    with engine.connect() as connection:
+    with get_engine().connect() as connection:
         rows = connection.execute(
             text(
                 """
@@ -109,7 +156,7 @@ def normalise_dates(series):
 
 def create_batch():
     """Open a control-batch row and return its surrogate id."""
-    with engine.begin() as connection:
+    with get_engine().begin() as connection:
         result = connection.execute(
             text(
                 """
@@ -125,7 +172,7 @@ def create_batch():
 
 def close_batch(batch_id, status, error=None):
     """Stamp the control-batch row with its final outcome."""
-    with engine.begin() as connection:
+    with get_engine().begin() as connection:
         connection.execute(
             text(
                 """
@@ -173,12 +220,12 @@ def load_file(file_name, table_name, date_columns, batch_id):
     # NULL instead of NaN, and proper Python types for the driver.
     df = df.astype(object).where(pd.notna(df), None)
 
-    with engine.begin() as connection:
+    with get_engine().begin() as connection:
         connection.execute(text(f"TRUNCATE TABLE {table_name}"))
 
     df.to_sql(
         table_name,
-        engine,
+        get_engine(),
         if_exists="append",
         index=False,
         chunksize=CHUNK_SIZE,

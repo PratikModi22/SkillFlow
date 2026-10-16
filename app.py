@@ -34,6 +34,7 @@ import plotly.express as px
 import streamlit as st
 
 from src.dal import AnalyticsManager, EmployeeManager, ProjectManager, ReviewManager
+from src.db_manager import DatabaseConnection
 from src.models import Employee, Project, Review
 from src.notifications import AssignmentNotifier, MailSettings
 from src.rbac import DEMO_USERS, RBAC, Permission, User, UserRole
@@ -70,7 +71,18 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-DEFAULT_DB_URL = st.secrets["DATABASE_URL"]
+def get_secret(key: str, default: str = "") -> str:
+    """Safely retrieves a configuration key from st.secrets without throwing FileNotFoundError or KeyError."""
+    try:
+        if hasattr(st, "secrets"):
+            val = st.secrets.get(key, default)
+            return str(val).strip() if val is not None else default
+    except BaseException:
+        pass
+    return default
+
+
+DEFAULT_DB_URL = get_secret("DATABASE_URL", os.getenv("DATABASE_URL", ""))
 
 PALETTE = ["#2E5EAA", "#E4572E", "#17BEBB", "#FFC914", "#6A4C93", "#2A9D8F"]
 
@@ -400,7 +412,7 @@ def resolve_database_url() -> str:
     """
     [CORE / IMPORTANT FUNCTION]
     Resolves MySQL connection string in strict priority order:
-    1. Streamlit secrets (.streamlit/secrets.toml)
+    1. Streamlit secrets (.streamlit/secrets.toml or Streamlit Community Cloud Secrets)
     2. OS Environment variable (DATABASE_URL)
     3. Project fallback default
 
@@ -412,21 +424,23 @@ def resolve_database_url() -> str:
     try:
         url = st.secrets.get("DATABASE_URL")
         if url:
-            return url
+            return str(url).strip()
     except Exception:
         pass
-    return os.getenv("DATABASE_URL", DEFAULT_DB_URL)
+    url = os.getenv("DATABASE_URL")
+    if url:
+        return str(url).strip()
+    return DEFAULT_DB_URL.strip() if DEFAULT_DB_URL else ""
 
 
 @st.cache_resource(show_spinner=False)
-def get_managers(database_url: str) -> tuple:
+def get_managers(profile: str = "local") -> tuple:
     """
     [CORE / IMPORTANT FUNCTION]
-    Cached resource factory that instantiates the 4 Data Access Layer managers:
-    1. EmployeeManager
-    2. ProjectManager
-    3. ReviewManager
-    4. AnalyticsManager
+    Cached resource factory that instantiates the 4 Data Access Layer managers
+    backed by the dedicated Singleton DatabaseConnection for the requested profile:
+    - 'local' : Local MySQL server (127.0.0.1:3306)
+    - 'hosted': Cloud MySQL server (Aiven MySQL)
 
     Why `@st.cache_resource` is essential:
     --------------------------------------
@@ -434,10 +448,11 @@ def get_managers(database_url: str) -> tuple:
     Caching the managers ensures that the Singleton connection pool and cached statements
     persist across reruns without reconnecting to MySQL on every interaction.
     """
-    employees = EmployeeManager()
-    projects = ProjectManager()
-    reviews = ReviewManager()
-    analytics = AnalyticsManager()
+    db = DatabaseConnection.for_environment(profile)
+    employees = EmployeeManager(db)
+    projects = ProjectManager(db)
+    reviews = ReviewManager(db)
+    analytics = AnalyticsManager(db)
     return employees, projects, reviews, analytics
 
 
@@ -1027,23 +1042,47 @@ if st.sidebar.button("Sign Out", use_container_width=True):
 
 st.sidebar.divider()
 
+is_cloud_env = (
+    "STREAMLIT_SHARING_MODE" in os.environ
+    or "STREAMLIT_SERVER_ENVIRONMENT" in os.environ
+    or os.getenv("DEPLOYMENT_ENV") == "hosted"
+    or not os.path.exists(".env")
+)
+
+st.sidebar.markdown(
+    "<div style='font-size: 0.74rem; text-transform: uppercase; font-weight: 700; opacity: 0.7; letter-spacing: 0.5px; margin-bottom: 2px;'>"
+    "Connection Profile</div>",
+    unsafe_allow_html=True,
+)
+db_choice = st.sidebar.radio(
+    "Target Connection",
+    ["Local (127.0.0.1:3306)", "Hosted (Aiven Cloud)"],
+    index=1 if is_cloud_env else 0,
+    label_visibility="collapsed",
+    key="db_env_profile",
+)
+
+active_profile = "hosted" if "Hosted" in db_choice else "local"
+
 employees_mgr, projects_mgr, reviews_mgr, analytics_mgr = get_managers(
-    resolve_database_url()
+    active_profile
 )
 
 connected = analytics_mgr.is_alive()
+profile_name = "Local (127.0.0.1)" if active_profile == "local" else "Hosted (Aiven Cloud)"
+
 if connected:
     st.sidebar.markdown(
-        "<div style='font-size: 0.8rem; opacity: 0.85; display: flex; align-items: center; gap: 6px; margin: 6px 0;'>"
-        "<span style='width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;'></span>"
-        "<b>Database:</b> MySQL 8.0 Connected</div>",
+        f"<div style='font-size: 0.8rem; opacity: 0.85; display: flex; align-items: center; gap: 6px; margin: 6px 0;'>"
+        f"<span style='width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;'></span>"
+        f"<b>Database:</b> {profile_name} Connected</div>",
         unsafe_allow_html=True,
     )
 else:
     st.sidebar.markdown(
-        "<div style='font-size: 0.8rem; opacity: 0.85; display: flex; align-items: center; gap: 6px; margin: 6px 0;'>"
-        "<span style='width: 8px; height: 8px; border-radius: 50%; background: #ef4444; display: inline-block;'></span>"
-        "<b>Database:</b> Connection Failed</div>",
+        f"<div style='font-size: 0.8rem; opacity: 0.85; display: flex; align-items: center; gap: 6px; margin: 6px 0;'>"
+        f"<span style='width: 8px; height: 8px; border-radius: 50%; background: #ef4444; display: inline-block;'></span>"
+        f"<b>Database:</b> {profile_name} Failed</div>",
         unsafe_allow_html=True,
     )
 
@@ -1073,10 +1112,19 @@ if connected:
     st.sidebar.metric("SCD2 versions", f"{dim_emp_count:,}")
 
 if not connected:
+    db_err = analytics_mgr.get_last_error()
     st.error(
-        "Cannot reach MySQL. Set DATABASE_URL in `.streamlit/secrets.toml` "
-        "or as an environment variable, then reload."
+        "Cannot reach MySQL database. Set `DATABASE_URL` in `.streamlit/secrets.toml` "
+        "or in your Streamlit Community Cloud app settings under **Secrets**, then reload."
     )
+    if db_err:
+        with st.expander("Connection Diagnostic Details", expanded=True):
+            st.code(db_err, language="text")
+            st.info(
+                "Tip for Cloud MySQL (e.g. Aiven, AWS RDS, DigitalOcean):\n"
+                "- URI format: `mysql+pymysql://avnadmin:PASSWORD@HOST:PORT/employee_analytics_dw`\n"
+                "- Ensure your database instance is running and port is open to the public."
+            )
     st.stop()
 
 

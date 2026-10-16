@@ -22,6 +22,7 @@ import logging
 import os
 import re
 import threading
+import urllib.parse
 from contextlib import contextmanager
 from decimal import Decimal
 from typing import Any, Iterator, Mapping, Sequence
@@ -46,8 +47,54 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Default connection string from environment variable (falls back to None if unset)
-DEFAULT_DB_URL = os.getenv("DATABASE_URL")
+# Default connection strings for Local and Hosted profiles
+LOCAL_DB_URL_DEFAULT = os.getenv("LOCAL_DATABASE_URL", "mysql+pymysql://root:12345@127.0.0.1:3306/employee_analytics_dw")
+HOSTED_DB_URL_DEFAULT = os.getenv("HOSTED_DATABASE_URL", "")
+DEFAULT_DB_URL = os.getenv("DATABASE_URL") or LOCAL_DB_URL_DEFAULT
+
+
+def _prepare_engine_url_and_args(raw_url: str) -> tuple[str, dict[str, Any]]:
+    """
+    [HELPER / UTILITY FUNCTION]
+    Normalizes database URL and configures SSL connect_args for PyMySQL compatibility.
+
+    Why this is needed:
+    -------------------
+    PyMySQL's `connect()` does not accept `ssl_mode` or `ssl-mode` query parameters
+    (common in cloud MySQL URIs such as Aiven, AWS RDS, DigitalOcean).
+    Passing them causes PyMySQL to raise:
+        TypeError: Connection.__init__() got an unexpected keyword argument 'ssl_mode'
+    This helper strips those driver-incompatible URL query parameters and translates
+    them into PyMySQL's expected `connect_args={"ssl": {"check_hostname": False}}`
+    for secure cloud database connectivity.
+    """
+    if not raw_url:
+        return raw_url, {}
+
+    parsed = urllib.parse.urlparse(raw_url)
+    query_params = urllib.parse.parse_qs(parsed.query)
+
+    # Detect if connecting to a remote cloud host or if SSL was requested
+    needs_ssl = (
+        any(k in query_params for k in ("ssl", "ssl_mode", "ssl-mode"))
+        or (parsed.hostname and parsed.hostname not in ("localhost", "127.0.0.1"))
+    )
+
+    # Strip query parameters not directly accepted by pymysql
+    for k in ("ssl_mode", "ssl-mode"):
+        query_params.pop(k, None)
+
+    # Reconstruct query string
+    clean_query = urllib.parse.urlencode(
+        [(k, val) for k, vals in query_params.items() for val in vals]
+    )
+    clean_url = urllib.parse.urlunparse(parsed._replace(query=clean_query))
+
+    connect_args: dict[str, Any] = {}
+    if needs_ssl:
+        connect_args["ssl"] = {"check_hostname": False}
+
+    return clean_url, connect_args
 
 
 # ============================================================================
@@ -146,52 +193,132 @@ def translate_db_error(exc: SQLAlchemyError) -> AppError:
 
 class DatabaseConnection:
     """
-    [CORE INFRASTRUCTURE CLASS - THREAD-SAFE SINGLETON]
-    Central manager of the SQLAlchemy database engine and connection pool.
+    [CORE INFRASTRUCTURE CLASS - THREAD-SAFE MULTI-PROFILE SINGLETON]
+    Central manager of SQLAlchemy database engines and connection pools.
 
     Design Pattern:
     ---------------
-    Singleton Pattern with Double-Checked Locking.
-    In Streamlit, every user interaction triggers a rerun of the Python script.
-    Without a Singleton, each rerun or page refresh would open new TCP connections,
-    quickly exceeding MySQL's `max_connections` limit.
-    This class ensures that only ONE engine instance and connection pool exists.
+    Maintains exactly TWO distinct, thread-safe singletons:
+    1. 'local'  : For local MySQL server (127.0.0.1:3306)
+    2. 'hosted' : For hosted cloud MySQL server (e.g. Aiven MySQL with SSL)
+
+    Ensures that switching between local development and hosted cloud
+    never leaks connections or creates redundant connection pools.
     """
 
-    _instance: "DatabaseConnection | None" = None
+    _instances: dict[str, "DatabaseConnection"] = {}
     _lock: threading.Lock = threading.Lock()
+    _active_profile: str = "local"
 
-    def __new__(cls) -> "DatabaseConnection":
+    @classmethod
+    def _resolve_profile(
+        cls, profile: str | None = None, db_url: str | None = None
+    ) -> str:
+        if profile in ("local", "hosted"):
+            return profile
+        if db_url:
+            if "127.0.0.1" in db_url or "localhost" in db_url:
+                return "local"
+            return "hosted"
+        return cls._active_profile
+
+    def __new__(
+        cls, profile: str | None = None, db_url: str | None = None, *args: Any, **kwargs: Any
+    ) -> "DatabaseConnection":
         """
         [CORE / IMPORTANT FUNCTION]
-        Guarantees that only a single instance of DatabaseConnection is ever instantiated.
+        Guarantees that only a single instance exists per profile ('local' or 'hosted').
         Uses double-checked locking with a thread lock to prevent race conditions.
         """
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = super().__new__(cls)
-                    cls._instance._initialised = False
-        return cls._instance
+        resolved = cls._resolve_profile(profile, db_url)
+        with cls._lock:
+            if resolved not in cls._instances:
+                inst = super().__new__(cls)
+                inst._initialised = False
+                inst.profile = resolved
+                cls._instances[resolved] = inst
+        return cls._instances[resolved]
 
-    def __init__(self, db_url: str | None = None) -> None:
+    def __init__(
+        self, profile: str | None = None, db_url: str | None = None, *args: Any, **kwargs: Any
+    ) -> None:
         """
         [CORE / IMPORTANT FUNCTION]
-        Initializes the connection configuration once during the singleton's lifetime.
+        Initializes the connection configuration once per profile singleton.
 
         Parameters:
         -----------
+        profile : str | None
+            Environment profile: 'local' or 'hosted'.
         db_url : str | None
-            Optional database URI. If omitted, loaded from DATABASE_URL environment variable.
+            Optional explicit database URI override.
         """
+        resolved = self._resolve_profile(profile, db_url)
         if getattr(self, "_initialised", False):
+            # If a new, non-empty db_url is supplied that differs from the active one, re-bind
+            if db_url and db_url != self.db_url:
+                if self._engine is not None:
+                    try:
+                        self._engine.dispose()
+                    except Exception:
+                        pass
+                    self._engine = None
+                self.db_url = db_url
+                self._last_error = None
             return
 
-        self.db_url: str = db_url or os.getenv("DATABASE_URL", DEFAULT_DB_URL)
+        self.profile: str = resolved
+        if db_url:
+            self.db_url = db_url
+        elif resolved == "hosted":
+            self.db_url = (
+                os.getenv("HOSTED_DATABASE_URL")
+                or os.getenv("DATABASE_URL")
+                or HOSTED_DB_URL_DEFAULT
+            )
+        else:
+            self.db_url = (
+                os.getenv("LOCAL_DATABASE_URL")
+                or os.getenv("DATABASE_URL")
+                or LOCAL_DB_URL_DEFAULT
+            )
+
         self._engine: Engine | None = None
+        self._last_error: str | None = None
         self._initialised = True
 
-        logger.info("DatabaseConnection singleton ready")
+        logger.info("DatabaseConnection singleton [%s] ready", self.profile)
+
+    @classmethod
+    def for_environment(
+        cls, profile: str = "local", db_url: str | None = None
+    ) -> "DatabaseConnection":
+        """Returns the dedicated singleton for either 'local' or 'hosted'."""
+        cls._active_profile = profile
+        return cls(profile=profile, db_url=db_url)
+
+    @classmethod
+    def get_local(cls, db_url: str | None = None) -> "DatabaseConnection":
+        """Convenience accessor for the local MySQL singleton."""
+        return cls.for_environment("local", db_url)
+
+    @classmethod
+    def get_hosted(cls, db_url: str | None = None) -> "DatabaseConnection":
+        """Convenience accessor for the hosted cloud MySQL singleton."""
+        return cls.for_environment("hosted", db_url)
+
+    @classmethod
+    def reset(cls, profile: str | None = None) -> None:
+        """Disposes and removes singleton instance(s)."""
+        with cls._lock:
+            profiles = [profile] if profile else list(cls._instances.keys())
+            for p in profiles:
+                inst = cls._instances.pop(p, None)
+                if inst and inst._engine is not None:
+                    try:
+                        inst._engine.dispose()
+                    except Exception:
+                        pass
 
     # ------------------------------------------------------------------
     # Engine Lifecycle & Diagnostics
@@ -213,9 +340,18 @@ class DatabaseConnection:
         - future=True        : Uses modern SQLAlchemy 2.0 transaction execution semantics.
         """
         if self._engine is None:
+            if not self.db_url:
+                msg = (
+                    "No database connection URL configured. Set DATABASE_URL in "
+                    ".streamlit/secrets.toml or as an environment variable."
+                )
+                self._last_error = msg
+                raise ConnectionFailedError(msg)
             try:
+                clean_url, connect_args = _prepare_engine_url_and_args(self.db_url)
                 self._engine = create_engine(
-                    self.db_url,
+                    clean_url,
+                    connect_args=connect_args,
                     pool_pre_ping=True,
                     pool_recycle=3600,
                     pool_size=5,
@@ -223,10 +359,13 @@ class DatabaseConnection:
                     future=True,
                 )
                 logger.info("MySQL engine created")
-            except SQLAlchemyError as exc:
-                raise ConnectionFailedError(
-                    f"Could not create the MySQL engine: {exc}"
-                ) from exc
+            except Exception as exc:
+                self._last_error = str(exc)
+                if isinstance(exc, SQLAlchemyError):
+                    raise ConnectionFailedError(
+                        f"Could not create the MySQL engine: {exc}"
+                    ) from exc
+                raise
         return self._engine
 
     def ping(self) -> bool:
@@ -239,10 +378,16 @@ class DatabaseConnection:
         """
         try:
             self.query_frame("SELECT 1 AS ok")
+            self._last_error = None
             return True
         except Exception as exc:  # noqa: BLE001 - probe must never crash
+            self._last_error = str(exc)
             logger.warning("Ping failed: %s", exc)
             return False
+
+    def get_last_error(self) -> str | None:
+        """Returns the last recorded connection or query error message."""
+        return getattr(self, "_last_error", None)
 
     # ------------------------------------------------------------------
     # Query Execution Methods
@@ -524,9 +669,21 @@ class BaseDataManager:
         Performs a rapid health probe (`SELECT 1`) to verify database connectivity.
         """
         try:
-            return bool(self.fetch_value("SELECT 1", default=0))
-        except Exception:
+            val = bool(self.fetch_value("SELECT 1", default=0))
+            if val:
+                self.db._last_error = None
+            return val
+        except Exception as exc:
+            self.db._last_error = str(exc)
+            logger.warning("Database probe failed: %s", exc)
             return False
+
+    def get_last_error(self) -> str | None:
+        """
+        [HELPER / UTILITY FUNCTION]
+        Returns the last recorded database connection or query error message.
+        """
+        return getattr(self.db, "_last_error", None)
 
 
 __all__ = [
@@ -534,4 +691,5 @@ __all__ = [
     "BaseDataManager",
     "DEFAULT_DB_URL",
     "translate_db_error",
+    "_prepare_engine_url_and_args",
 ]

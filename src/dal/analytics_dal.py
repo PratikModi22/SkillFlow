@@ -479,17 +479,20 @@ class AnalyticsManager(BaseDataManager):
         [HELPER / UTILITY FUNCTION]
         Queries row counts across all dimensions and fact tables for the data quality panel.
         """
-        return self.fetch_frame(
-            """
-            SELECT 'dim_date'                 AS table_name, COUNT(*) AS rows_count FROM dim_date
-            UNION ALL SELECT 'dim_department',           COUNT(*) FROM dim_department
-            UNION ALL SELECT 'dim_project',              COUNT(*) FROM dim_project
-            UNION ALL SELECT 'dim_employee',             COUNT(*) FROM dim_employee
-            UNION ALL SELECT 'dim_employee (current)',   COUNT(*) FROM dim_employee WHERE IsCurrent = 1
-            UNION ALL SELECT 'dim_employee (historical)',COUNT(*) FROM dim_employee WHERE IsCurrent = 0
-            UNION ALL SELECT 'fact_performance_reviews',  COUNT(*) FROM fact_performance_reviews
-            """
-        )
+        try:
+            return self.fetch_frame(
+                """
+                SELECT 'dim_date'                 AS table_name, COUNT(*) AS rows_count FROM dim_date
+                UNION ALL SELECT 'dim_department',           COUNT(*) FROM dim_department
+                UNION ALL SELECT 'dim_project',              COUNT(*) FROM dim_project
+                UNION ALL SELECT 'dim_employee',             COUNT(*) FROM dim_employee
+                UNION ALL SELECT 'dim_employee (current)',   COUNT(*) FROM dim_employee WHERE IsCurrent = 1
+                UNION ALL SELECT 'dim_employee (historical)',COUNT(*) FROM dim_employee WHERE IsCurrent = 0
+                UNION ALL SELECT 'fact_performance_reviews',  COUNT(*) FROM fact_performance_reviews
+                """
+            )
+        except Exception:
+            return pd.DataFrame(columns=["table_name", "rows_count"])
 
     def load_log(self, limit: int = 20) -> pd.DataFrame:
         """
