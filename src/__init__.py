@@ -57,9 +57,9 @@ from .validation import (
     validate_text,
 )
 
-from .rbac import RBAC, Permission, UserRole
+from .rbac import DEMO_USERS, RBAC, Permission, User, UserRole
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 __all__ = [
     "AppError",
@@ -83,6 +83,8 @@ __all__ = [
     "validate_identifier",
     "UserRole",
     "Permission",
+    "User",
+    "DEMO_USERS",
     "RBAC",
     "__version__",
 ]

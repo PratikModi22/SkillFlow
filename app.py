@@ -36,7 +36,7 @@ import streamlit as st
 from src.dal import AnalyticsManager, EmployeeManager, ProjectManager, ReviewManager
 from src.models import Employee, Project, Review
 from src.notifications import AssignmentNotifier, MailSettings
-from src.rbac import RBAC, Permission, UserRole
+from src.rbac import DEMO_USERS, RBAC, Permission, User, UserRole
 from src.validation import (
     MAX_EMAIL,
     MAX_NAME,
@@ -85,6 +85,12 @@ st.markdown(
     <style>
         .block-container { padding-top: 1.8rem; }
 
+        /* ---------------- Global & Typography ---------------- */
+        h1, h2, h3, h4 {
+            letter-spacing: -0.4px;
+            font-weight: 700;
+        }
+
         /* ---------------- Brand Header ---------------- */
         .brand-container {
             display: flex;
@@ -97,14 +103,14 @@ st.markdown(
         .brand-icon {
             font-size: 2rem;
             line-height: 1;
-            filter: drop-shadow(0 2px 8px rgba(255, 201, 20, 0.4));
+            filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.4));
         }
         .brand-title {
             font-size: 1.35rem;
             font-weight: 800;
             letter-spacing: -0.5px;
             margin: 0;
-            background: linear-gradient(120deg, #2E5EAA, #17BEBB);
+            background: linear-gradient(120deg, #6366f1, #3b82f6, #06b6d4);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -116,16 +122,17 @@ st.markdown(
             margin: 0;
         }
 
-        /* ---------------- User Profile Card ---------------- */
+        /* ---------------- User Profile Card in Sidebar ---------------- */
         .user-card {
             background: color-mix(in srgb, currentColor 4%, transparent);
             border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-            border-radius: 10px;
-            padding: 10px 14px;
-            margin-bottom: 14px;
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
             display: flex;
             flex-direction: column;
             gap: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
         .user-card-header {
             display: flex;
@@ -133,36 +140,71 @@ st.markdown(
             justify-content: space-between;
         }
         .user-name {
-            font-size: 0.88rem;
-            font-weight: 600;
-        }
-
-        /* ---------------- KPI cards ---------------- */
-        [data-testid="stMetric"] {
-            background: color-mix(in srgb, currentColor 5%, transparent);
-            border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-            border-radius: 12px;
-            padding: 16px 18px;
-            transition: transform 180ms ease, box-shadow 180ms ease;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-        }
-        [data-testid="stMetric"]:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-            border-color: color-mix(in srgb, currentColor 28%, transparent);
-        }
-        [data-testid="stMetricLabel"] {
-            color: color-mix(in srgb, currentColor 80%, transparent);
-            font-size: 0.84rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        [data-testid="stMetricValue"] {
+            font-size: 0.92rem;
             font-weight: 700;
         }
 
-        /* ---------------- Sidebar navigation ---------------- */
+        /* ---------------- Modern KPI Metric Cards ---------------- */
+        [data-testid="stMetric"] {
+            background: color-mix(in srgb, currentColor 4%, transparent);
+            border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+            border-top: 3px solid #6366f1;
+            border-radius: 14px;
+            padding: 16px 18px;
+            transition: transform 180ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 180ms cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+        [data-testid="stMetric"]:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.12);
+            border-color: color-mix(in srgb, #6366f1 40%, transparent);
+        }
+        [data-testid="stMetricLabel"] {
+            color: color-mix(in srgb, currentColor 80%, transparent);
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+        [data-testid="stMetricValue"] {
+            font-weight: 800;
+            font-size: 1.85rem;
+            letter-spacing: -0.5px;
+        }
+
+        /* ---------------- Modern Segmented Tabs ---------------- */
+        button[data-baseweb="tab"] {
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 8px 18px;
+            transition: all 160ms ease;
+        }
+        button[data-baseweb="tab"][aria-selected="true"] {
+            background: color-mix(in srgb, #6366f1 15%, transparent);
+            color: #6366f1;
+        }
+
+        /* ---------------- Modern Buttons ---------------- */
+        .stButton > button {
+            border-radius: 10px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            transition: all 160ms ease;
+        }
+        .stButton > button:hover {
+            transform: translateY(-1px);
+        }
+        .stButton > button[kind="primary"] {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border: none;
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+        }
+        .stButton > button[kind="primary"]:hover {
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45);
+        }
+
+        /* ---------------- Sidebar Navigation ---------------- */
         [data-testid="stSidebar"] div:has([data-testid="stRadioGroup"]) {
             width: 100%;
         }
@@ -206,25 +248,25 @@ st.markdown(
         }
         [data-testid="stSidebar"]
         label[data-testid="stRadioOption"][data-selected="true"] {
-            background: color-mix(in srgb, #2E5EAA 20%, transparent);
-            box-shadow: inset 3px 0 0 #2E5EAA;
+            background: color-mix(in srgb, #6366f1 20%, transparent);
+            box-shadow: inset 3px 0 0 #6366f1;
         }
         [data-testid="stSidebar"]
         label[data-testid="stRadioOption"][data-selected="true"] p {
-            font-weight: 600;
-            color: #2E5EAA;
+            font-weight: 700;
+            color: #6366f1;
         }
 
         /* ---------------- Security Warning Card ---------------- */
         .rbac-restricted-box {
-            background: color-mix(in srgb, #E4572E 10%, transparent);
-            border: 1px solid color-mix(in srgb, #E4572E 35%, transparent);
-            border-radius: 10px;
+            background: color-mix(in srgb, #ef4444 10%, transparent);
+            border: 1px solid color-mix(in srgb, #ef4444 35%, transparent);
+            border-radius: 12px;
             padding: 14px 18px;
             margin: 12px 0 20px 0;
         }
         .rbac-restricted-title {
-            color: #E4572E;
+            color: #ef4444;
             font-weight: 700;
             font-size: 0.95rem;
             margin-bottom: 4px;
@@ -236,6 +278,103 @@ st.markdown(
             font-size: 0.85rem;
             opacity: 0.88;
             margin: 0;
+        }
+
+        /* ---------------- Login & Authentication Portal ---------------- */
+        .login-hero {
+            text-align: center;
+            padding: 24px 12px 20px 12px;
+            max-width: 820px;
+            margin: 0 auto;
+        }
+        .login-hero-badge {
+            display: inline-block;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            background: color-mix(in srgb, #6366f1 18%, transparent);
+            color: #818cf8;
+            border: 1px solid color-mix(in srgb, #6366f1 35%, transparent);
+            margin-bottom: 12px;
+        }
+        .login-hero-title {
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -0.8px;
+            line-height: 1.25;
+            margin: 0 0 10px 0;
+            background: linear-gradient(135deg, #6366f1 0%, #3b82f6 50%, #10b981 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .login-hero-sub {
+            font-size: 1.0rem;
+            opacity: 0.8;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        .persona-card {
+            background: color-mix(in srgb, currentColor 3.5%, transparent);
+            border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+            border-radius: 14px;
+            padding: 16px;
+            transition: all 180ms ease;
+            display: flex;
+            flex-direction: column;
+            min-height: 250px;
+            margin-bottom: 10px;
+        }
+        .persona-card:hover {
+            border-color: color-mix(in srgb, #6366f1 45%, transparent);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.12);
+        }
+        .persona-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .persona-avatar {
+            font-size: 1.8rem;
+            line-height: 1;
+        }
+        .persona-name {
+            font-size: 0.98rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        .persona-title {
+            font-size: 0.76rem;
+            opacity: 0.7;
+            margin: 0;
+        }
+        .persona-badge {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+            margin: 6px 0 8px 0;
+        }
+        .persona-desc {
+            font-size: 0.80rem;
+            opacity: 0.82;
+            line-height: 1.4;
+            margin-bottom: 10px;
+            flex-grow: 1;
+        }
+        .persona-cred {
+            font-family: monospace;
+            font-size: 0.74rem;
+            background: color-mix(in srgb, currentColor 6%, transparent);
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            color: #818cf8;
         }
     </style>
     """,
@@ -648,8 +787,175 @@ def guarded_input(
 
 
 # --------------------------------------------------------------------------
-# Sidebar & Role-Based Access Control (RBAC)
+# Authentication Gate & Login Portal
 # --------------------------------------------------------------------------
+
+
+def render_login_screen() -> None:
+    """
+    [PRESENTATION / AUTHENTICATION GATEWAY]
+    Renders the modern SkillFlow enterprise authentication portal.
+    Features:
+    1. 1-Click Persona Quick-Access: Instant review capability across all 4 RBAC roles.
+    2. Corporate Credential Form: Authentic email + password login verification.
+    3. Test Credentials Directory: Complete role mapping and security scopes.
+    """
+    st.markdown(
+        """
+        <div class="login-hero">
+            <div class="login-hero-badge">⚡ Enterprise Security & RBAC Gateway</div>
+            <h1 class="login-hero-title">SkillFlow Workforce Intelligence</h1>
+            <p class="login-hero-sub">
+                Enterprise Data Warehouse & Analytics Platform with Granular Role-Based Access Control.
+                Select a verified persona below for instant 1-click evaluation, or sign in with corporate credentials.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    tab_demo, tab_manual = st.tabs(
+        [
+            "🚀 1-Click Demo Personas (Reviewer Mode)",
+            "🔐 Corporate Credential Sign In",
+        ]
+    )
+
+    with tab_demo:
+        st.markdown(
+            "<p style='text-align: center; color: #94a3b8; font-size: 0.92rem; margin-bottom: 20px;'>"
+            "Select any organizational role below to immediately test its permissions, restricted views, and operational capabilities."
+            "</p>",
+            unsafe_allow_html=True,
+        )
+
+        cols = st.columns(4)
+        for idx, (email, user) in enumerate(DEMO_USERS.items()):
+            role_meta = RBAC.get_role_info(user.role)
+            with cols[idx]:
+                st.markdown(
+                    f"""
+                    <div class="persona-card">
+                        <div class="persona-header">
+                            <span class="persona-avatar">{user.avatar}</span>
+                            <div>
+                                <h4 class="persona-name">{user.name}</h4>
+                                <p class="persona-title">{user.title}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="persona-badge" style="background: color-mix(in srgb, {role_meta['badge_color']} 18%, transparent); color: {role_meta['badge_color']}; border: 1px solid {role_meta['badge_color']};">
+                                {role_meta['badge']}
+                            </span>
+                        </div>
+                        <p class="persona-desc">{role_meta['description']}</p>
+                        <div class="persona-cred">📧 {user.email}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                if st.button(
+                    f"⚡ Sign In as {user.role.value}",
+                    key=f"demo_login_{user.role.name}",
+                    use_container_width=True,
+                    type="primary" if user.role == UserRole.HR_ADMIN else "secondary",
+                ):
+                    st.session_state["authenticated"] = True
+                    st.session_state["current_user"] = user
+                    st.session_state["active_role"] = user.role
+                    st.rerun()
+
+    with tab_manual:
+        st.markdown("<br>", unsafe_allow_html=True)
+        login_col, cheat_col = st.columns([1, 1], gap="large")
+
+        with login_col:
+            st.markdown(
+                """
+                <div style="font-weight: 700; font-size: 1.15rem; margin-bottom: 4px;">
+                    Corporate Single Sign-On (SSO)
+                </div>
+                <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 16px;">
+                    Authenticate using your verified corporate credentials.
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            with st.form("manual_credential_form"):
+                email_input = st.text_input(
+                    "Corporate Email",
+                    value="admin@skillflow.com",
+                    placeholder="name@skillflow.com",
+                )
+                password_input = st.text_input(
+                    "Password",
+                    value="admin",
+                    type="password",
+                    placeholder="Enter account password",
+                )
+                submit_login = st.form_submit_button(
+                    "🔐 Authenticate & Enter",
+                    use_container_width=True,
+                    type="primary",
+                )
+
+                if submit_login:
+                    matched_user = RBAC.authenticate(email_input, password_input)
+                    if matched_user:
+                        st.session_state["authenticated"] = True
+                        st.session_state["current_user"] = matched_user
+                        st.session_state["active_role"] = matched_user.role
+                        st.success(f"Access granted: {matched_user.name} ({matched_user.role.value})")
+                        st.rerun()
+                    else:
+                        st.error("Authentication failed. Invalid email or password. See the Credentials Directory on the right.")
+
+        with cheat_col:
+            st.markdown(
+                """
+                <div style="font-weight: 700; font-size: 1.15rem; margin-bottom: 4px;">
+                    🔑 Test Credentials Directory
+                </div>
+                <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 16px;">
+                    Pre-seeded test accounts for sandbox security verification.
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            cheat_data = [
+                {"Role": "👑 HR Admin", "Email": "admin@skillflow.com", "Password": "admin", "Scope": "Full Read/Write, SCD2, Dual-Write, DW Sync"},
+                {"Role": "👥 Dept Manager", "Email": "manager@skillflow.com", "Password": "manager", "Scope": "Team Analytics, Reviews, Projects"},
+                {"Role": "📊 Auditor", "Email": "auditor@skillflow.com", "Password": "audit", "Scope": "Strict Read-Only, DW Logs, SCD2 Audit"},
+                {"Role": "👤 Employee", "Email": "employee@skillflow.com", "Password": "emp", "Scope": "Self-Service Directory, Project Catalog"},
+            ]
+            st.dataframe(
+                pd.DataFrame(cheat_data),
+                use_container_width=True,
+                hide_index=True,
+            )
+
+    st.markdown("---")
+    st.caption("🔒 SkillFlow Enterprise Security Gateway • End-to-end Session RBAC Protection • Built with Streamlit & MySQL 8.0")
+
+
+# Session State Initialization
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+    st.session_state["current_user"] = None
+    st.session_state["active_role"] = UserRole.HR_ADMIN
+
+# Authentication Gate: Blocks all unauthorized requests
+if not st.session_state["authenticated"]:
+    render_login_screen()
+    st.stop()
+
+# --------------------------------------------------------------------------
+# Sidebar & Authenticated Session Management
+# --------------------------------------------------------------------------
+
+current_user: User = st.session_state.get("current_user") or DEMO_USERS["admin@skillflow.com"]
+active_role: UserRole = st.session_state.get("active_role", current_user.role)
+role_info = RBAC.get_role_info(active_role)
 
 st.sidebar.markdown(
     """
@@ -664,37 +970,51 @@ st.sidebar.markdown(
     unsafe_allow_html=True,
 )
 
-# Active User & RBAC Role Session State
-if "active_role" not in st.session_state:
-    st.session_state["active_role"] = UserRole.HR_ADMIN
-
-# Role Selection Widget
-active_role = st.sidebar.selectbox(
-    "Security Role",
-    options=list(UserRole),
-    index=list(UserRole).index(st.session_state["active_role"]),
-    help="Switch between roles to preview granular RBAC permissions.",
-)
-st.session_state["active_role"] = active_role
-role_info = RBAC.get_role_info(active_role)
-
-# User Profile & Role Info Card
+# Active User Profile Card
 st.sidebar.markdown(
     f"""
     <div class="user-card">
         <div class="user-card-header">
-            <span class="user-name">👤 Pratik Modi</span>
-            <span style="font-size: 0.72rem; padding: 2px 7px; border-radius: 12px; background: color-mix(in srgb, {role_info['badge_color']} 18%, transparent); color: {role_info['badge_color']}; font-weight: 700; border: 1px solid {role_info['badge_color']};">
+            <span class="user-name">{current_user.avatar} {current_user.name}</span>
+            <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 12px; background: color-mix(in srgb, {role_info['badge_color']} 18%, transparent); color: {role_info['badge_color']}; font-weight: 700; border: 1px solid {role_info['badge_color']};">
                 {role_info['badge']}
             </span>
         </div>
-        <div style="font-size: 0.78rem; opacity: 0.78; margin-top: 2px;">
+        <div style="font-size: 0.78rem; opacity: 0.75; margin-top: 2px;">
+            {current_user.title} • {current_user.department}
+        </div>
+        <div style="font-size: 0.75rem; opacity: 0.85; margin-top: 6px; line-height: 1.35;">
             {role_info['description']}
         </div>
     </div>
     """,
     unsafe_allow_html=True,
 )
+
+# Rapid Persona Switcher (Enables live switching during evaluations)
+with st.sidebar.expander("⚡ Switch Demo Persona", expanded=False):
+    st.caption("Evaluate another role's permissions:")
+    for email, demo_u in DEMO_USERS.items():
+        is_current = demo_u.email == current_user.email
+        btn_label = f"{demo_u.avatar} {demo_u.name} ({demo_u.role.value}) {'✓' if is_current else ''}"
+        if st.button(
+            btn_label,
+            key=f"sb_switch_{demo_u.role.name}",
+            use_container_width=True,
+            disabled=is_current,
+        ):
+            st.session_state["current_user"] = demo_u
+            st.session_state["active_role"] = demo_u.role
+            st.rerun()
+
+# Sign Out button
+if st.sidebar.button("🚪 Sign Out", use_container_width=True):
+    st.session_state["authenticated"] = False
+    st.session_state["current_user"] = None
+    st.session_state["active_role"] = UserRole.HR_ADMIN
+    st.rerun()
+
+st.sidebar.divider()
 
 employees_mgr, projects_mgr, reviews_mgr, analytics_mgr = get_managers(
     resolve_database_url()
@@ -721,13 +1041,15 @@ page = st.sidebar.radio(
 
 if connected:
     counts = analytics_mgr.warehouse_row_counts()
-    total_rows = int(counts["rows_count"].sum())
+    total_rows = int(counts["rows_count"].sum()) if not counts.empty else 0
     st.sidebar.divider()
     st.sidebar.metric("Warehouse rows", f"{total_rows:,}")
-    st.sidebar.metric(
-        "SCD2 versions",
-        f"{int(counts.loc[counts.table_name == 'dim_employee', 'rows_count'].iloc[0]):,}",
-    )
+    dim_emp_count = 0
+    if not counts.empty and (counts.table_name == "dim_employee").any():
+        dim_emp_count = int(
+            counts.loc[counts.table_name == "dim_employee", "rows_count"].iloc[0]
+        )
+    st.sidebar.metric("SCD2 versions", f"{dim_emp_count:,}")
 
 if not connected:
     st.error(
@@ -759,17 +1081,24 @@ if page == PAGE_HOME:
         empty_state("Warehouse is empty. Run the ETL procedures first.")
         st.stop()
 
+    total_emp = int(kpi.get("total_employees") or 0)
+    active_emp = int(kpi.get("active_employees") or 0)
+    term_emp = int(kpi.get("terminated_employees") or 0)
+    attrition = kpi.get("attrition_pct", 0.0)
+    avg_sal = kpi.get("avg_salary", 0.0)
+    avg_sc = kpi.get("avg_score", 0.0)
+
     c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("Employees", f"{int(kpi['total_employees']):,}")
-    c2.metric("Active", f"{int(kpi['active_employees']):,}")
+    c1.metric("Employees", f"{total_emp:,}")
+    c2.metric("Active", f"{active_emp:,}")
     c3.metric(
         "Attrition",
-        f"{kpi['attrition_pct']}%",
-        delta=f"{int(kpi['terminated_employees'])} leavers",
+        f"{attrition}%",
+        delta=f"{term_emp} leavers" if term_emp else None,
         delta_color="inverse",
     )
-    c4.metric("Avg salary", money(kpi["avg_salary"]))
-    c5.metric("Avg score", f"{kpi['avg_score']}")
+    c4.metric("Avg salary", money(avg_sal))
+    c5.metric("Avg score", f"{avg_sc}")
 
     st.divider()
 

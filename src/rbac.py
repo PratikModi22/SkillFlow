@@ -1,15 +1,15 @@
 """
-SkillFlow: Role-Based Access Control (RBAC) Architecture
-=========================================================
-Defines roles, capabilities, and permission guards for the SkillFlow
-Enterprise Workforce Intelligence & Data Warehouse platform.
+SkillFlow: Role-Based Access Control (RBAC) & Authentication Module
+===================================================================
+Defines security roles, system permissions, user accounts, and authentication
+guards for the SkillFlow Enterprise Workforce Intelligence Platform.
 
-Roles:
-------
-1. HR Administrator (Full Read / Write / DW Maintenance)
-2. Department Manager (Operations / Reviews / Project Assignments)
-3. Data Analyst / Auditor (Read-Only Analytics / Audit Trails)
-4. Standard Employee (Self-Service Directory & Team Projects)
+Demo Accounts:
+--------------
+- admin@skillflow.com     (admin123)    -> 👑 HR Administrator (Full Access)
+- manager@skillflow.com   (manager123)  -> 👥 Department Manager (Operations)
+- auditor@skillflow.com   (auditor123)  -> 📊 Data Analyst / Auditor (Read-Only)
+- employee@skillflow.com  (employee123) -> 👤 Standard Employee (Self-Service)
 """
 
 from __future__ import annotations
@@ -40,6 +40,18 @@ class Permission(str, Enum):
     SUBMIT_REVIEW = "submit_review"
     VIEW_WAREHOUSE = "view_warehouse"
     TRIGGER_DW_SYNC = "trigger_dw_sync"
+
+
+@dataclass
+class User:
+    """Represents an authenticated system user profile."""
+    email: str
+    password: str
+    name: str
+    title: str
+    role: UserRole
+    department: str
+    avatar: str
 
 
 # Role-to-Permissions Mapping
@@ -87,41 +99,103 @@ ROLE_PAGES: dict[UserRole, list[str]] = {
     UserRole.EMPLOYEE: ["Employees", "Projects"],
 }
 
-# Role metadata for display
+# Role display metadata
 ROLE_METADATA = {
     UserRole.HR_ADMIN: {
         "title": "HR Administrator",
         "badge": "Full Access (Admin)",
-        "badge_color": "#8338ec",
+        "badge_color": "#8b5cf6",
         "description": "Unrestricted administrative access to all analytics, employee onboarding, SCD2 transfers, appraisals, and warehouse ETL sync.",
         "can_write": True,
     },
     UserRole.DEPT_MANAGER: {
         "title": "Department Manager",
         "badge": "Operations / Staffing",
-        "badge_color": "#3a86ff",
+        "badge_color": "#3b82f6",
         "description": "Operational access to team allocations, staff reviews, and department transfers. Restricted from DW ETL sync and system administration.",
         "can_write": True,
     },
     UserRole.DATA_ANALYST: {
         "title": "Data Analyst / Auditor",
         "badge": "Read-Only Audit Mode",
-        "badge_color": "#fb5607",
+        "badge_color": "#f59e0b",
         "description": "Read-only access to executive dashboards, historical reviews, and warehouse logs. Write operations are disabled for audit compliance.",
         "can_write": False,
     },
     UserRole.EMPLOYEE: {
         "title": "Standard Employee",
         "badge": "Self-Service",
-        "badge_color": "#2a9d8f",
+        "badge_color": "#10b981",
         "description": "Limited self-service access to employee directory and project rosters. Executive metrics and data warehouse internals are hidden.",
         "can_write": False,
     },
 }
 
+# Pre-Configured Demo Enterprise Accounts
+DEMO_USERS: dict[str, User] = {
+    "admin@skillflow.com": User(
+        email="admin@skillflow.com",
+        password="admin",
+        name="Pratik Modi",
+        title="Chief People Officer / HR Admin",
+        role=UserRole.HR_ADMIN,
+        department="Executive Leadership",
+        avatar="👑",
+    ),
+    "manager@skillflow.com": User(
+        email="manager@skillflow.com",
+        password="manager",
+        name="Sarah Jenkins",
+        title="Engineering Director",
+        role=UserRole.DEPT_MANAGER,
+        department="Research & Development",
+        avatar="👥",
+    ),
+    "auditor@skillflow.com": User(
+        email="auditor@skillflow.com",
+        password="audit",
+        name="David Vance",
+        title="Senior Compliance Auditor",
+        role=UserRole.DATA_ANALYST,
+        department="Governance & Risk",
+        avatar="📊",
+    ),
+    "employee@skillflow.com": User(
+        email="employee@skillflow.com",
+        password="emp",
+        name="Alex Chen",
+        title="Senior Software Engineer",
+        role=UserRole.EMPLOYEE,
+        department="Engineering",
+        avatar="👤",
+    ),
+}
+
 
 class RBAC:
-    """Helper methods for evaluating permissions."""
+    """Helper methods for authentication and permission evaluation."""
+
+    @staticmethod
+    def authenticate(email: str, password: str) -> User | None:
+        """Validate credentials against the enterprise user store."""
+        clean_email = email.strip().lower()
+        user = DEMO_USERS.get(clean_email)
+        if user and user.password == password.strip():
+            return user
+        return None
+
+    @staticmethod
+    def get_user_by_role(role: UserRole) -> User:
+        """Retrieve the primary demo user for a specific role."""
+        for user in DEMO_USERS.values():
+            if user.role == role:
+                return user
+        return list(DEMO_USERS.values())[0]
+
+    @staticmethod
+    def get_all_demo_users() -> list[User]:
+        """Return all demo users for easy showcase login."""
+        return list(DEMO_USERS.values())
 
     @staticmethod
     def has_permission(role: UserRole | str, permission: Permission) -> bool:
