@@ -6,10 +6,10 @@ guards for the SkillFlow Enterprise Workforce Intelligence Platform.
 
 Demo Accounts:
 --------------
-- admin@skillflow.com     (admin123)    -> 👑 HR Administrator (Full Access)
-- manager@skillflow.com   (manager123)  -> 👥 Department Manager (Operations)
-- auditor@skillflow.com   (auditor123)  -> 📊 Data Analyst / Auditor (Read-Only)
-- employee@skillflow.com  (employee123) -> 👤 Standard Employee (Self-Service)
+- admin@skillflow.com     (admin123)    ->  HR Administrator (Full Access)
+- manager@skillflow.com   (manager123)  ->  Department Manager (Operations)
+- auditor@skillflow.com   (auditor123)  ->  Data Analyst / Auditor (Read-Only)
+- employee@skillflow.com  (employee123) ->  Standard Employee (Self-Service)
 """
 
 from __future__ import annotations
@@ -21,10 +21,10 @@ from typing import Set
 
 class UserRole(str, Enum):
     """Enumeration of system security roles."""
-    HR_ADMIN = "👑 HR Administrator"
-    DEPT_MANAGER = "👥 Department Manager"
-    DATA_ANALYST = "📊 Data Analyst (Auditor)"
-    EMPLOYEE = "👤 Employee (Self-Service)"
+    HR_ADMIN = "HR Administrator"
+    DEPT_MANAGER = "Department Manager"
+    DATA_ANALYST = "Compliance Auditor"
+    EMPLOYEE = "Standard Employee"
 
 
 class Permission(str, Enum):
@@ -51,7 +51,8 @@ class User:
     title: str
     role: UserRole
     department: str
-    avatar: str
+    badge_tag: str = "USER"
+    avatar: str = ""
 
 
 # Role-to-Permissions Mapping
@@ -86,6 +87,7 @@ ROLE_PERMISSIONS: dict[UserRole, Set[Permission]] = {
         Permission.VIEW_WAREHOUSE,
     },
     UserRole.EMPLOYEE: {
+        Permission.VIEW_DASHBOARD,
         Permission.VIEW_EMPLOYEE_DIRECTORY,
         Permission.VIEW_PROJECTS,
     },
@@ -96,7 +98,7 @@ ROLE_PAGES: dict[UserRole, list[str]] = {
     UserRole.HR_ADMIN: ["Dashboard", "Employees", "Projects", "Reviews", "Warehouse"],
     UserRole.DEPT_MANAGER: ["Dashboard", "Employees", "Projects", "Reviews"],
     UserRole.DATA_ANALYST: ["Dashboard", "Employees", "Projects", "Reviews", "Warehouse"],
-    UserRole.EMPLOYEE: ["Employees", "Projects"],
+    UserRole.EMPLOYEE: ["Dashboard", "Employees", "Projects"],
 }
 
 # Role display metadata
@@ -104,7 +106,7 @@ ROLE_METADATA = {
     UserRole.HR_ADMIN: {
         "title": "HR Administrator",
         "badge": "Full Access (Admin)",
-        "badge_color": "#8b5cf6",
+        "badge_color": "#6366f1",
         "description": "Unrestricted administrative access to all analytics, employee onboarding, SCD2 transfers, appraisals, and warehouse ETL sync.",
         "can_write": True,
     },
@@ -116,9 +118,9 @@ ROLE_METADATA = {
         "can_write": True,
     },
     UserRole.DATA_ANALYST: {
-        "title": "Data Analyst / Auditor",
+        "title": "Compliance Auditor",
         "badge": "Read-Only Audit Mode",
-        "badge_color": "#f59e0b",
+        "badge_color": "#06b6d4",
         "description": "Read-only access to executive dashboards, historical reviews, and warehouse logs. Write operations are disabled for audit compliance.",
         "can_write": False,
     },
@@ -126,7 +128,7 @@ ROLE_METADATA = {
         "title": "Standard Employee",
         "badge": "Self-Service",
         "badge_color": "#10b981",
-        "description": "Limited self-service access to employee directory and project rosters. Executive metrics and data warehouse internals are hidden.",
+        "description": "Self-service access to employee directory, project rosters, and high-level dashboard. Management forms and warehouse internals are restricted.",
         "can_write": False,
     },
 }
@@ -140,7 +142,8 @@ DEMO_USERS: dict[str, User] = {
         title="Chief People Officer / HR Admin",
         role=UserRole.HR_ADMIN,
         department="Executive Leadership",
-        avatar="👑",
+        badge_tag="ADMIN",
+        avatar="ADM",
     ),
     "manager@skillflow.com": User(
         email="manager@skillflow.com",
@@ -149,7 +152,8 @@ DEMO_USERS: dict[str, User] = {
         title="Engineering Director",
         role=UserRole.DEPT_MANAGER,
         department="Research & Development",
-        avatar="👥",
+        badge_tag="MANAGER",
+        avatar="MGR",
     ),
     "auditor@skillflow.com": User(
         email="auditor@skillflow.com",
@@ -158,7 +162,8 @@ DEMO_USERS: dict[str, User] = {
         title="Senior Compliance Auditor",
         role=UserRole.DATA_ANALYST,
         department="Governance & Risk",
-        avatar="📊",
+        badge_tag="AUDITOR",
+        avatar="AUD",
     ),
     "employee@skillflow.com": User(
         email="employee@skillflow.com",
@@ -167,7 +172,8 @@ DEMO_USERS: dict[str, User] = {
         title="Senior Software Engineer",
         role=UserRole.EMPLOYEE,
         department="Engineering",
-        avatar="👤",
+        badge_tag="EMPLOYEE",
+        avatar="EMP",
     ),
 }
 

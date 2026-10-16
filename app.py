@@ -66,7 +66,6 @@ logger = logging.getLogger(__name__)
 
 st.set_page_config(
     page_title="SkillFlow | Enterprise Workforce Intelligence",
-    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -100,10 +99,20 @@ st.markdown(
             border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent);
             margin-bottom: 14px;
         }
-        .brand-icon {
-            font-size: 2rem;
-            line-height: 1;
-            filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.4));
+        .brand-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+            flex-shrink: 0;
         }
         .brand-title {
             font-size: 1.35rem;
@@ -794,20 +803,20 @@ def guarded_input(
 def render_login_screen() -> None:
     """
     [PRESENTATION / AUTHENTICATION GATEWAY]
-    Renders the modern SkillFlow enterprise authentication portal.
+    Renders the SkillFlow enterprise authentication portal.
     Features:
-    1. 1-Click Persona Quick-Access: Instant review capability across all 4 RBAC roles.
+    1. One-Click Persona Quick-Access: Instant evaluation across corporate RBAC roles.
     2. Corporate Credential Form: Authentic email + password login verification.
     3. Test Credentials Directory: Complete role mapping and security scopes.
     """
     st.markdown(
         """
         <div class="login-hero">
-            <div class="login-hero-badge">⚡ Enterprise Security & RBAC Gateway</div>
+            <div class="login-hero-badge">Enterprise Security & Access Gateway</div>
             <h1 class="login-hero-title">SkillFlow Workforce Intelligence</h1>
             <p class="login-hero-sub">
                 Enterprise Data Warehouse & Analytics Platform with Granular Role-Based Access Control.
-                Select a verified persona below for instant 1-click evaluation, or sign in with corporate credentials.
+                Select a verified persona below for instant evaluation, or sign in with corporate credentials.
             </p>
         </div>
         """,
@@ -816,15 +825,15 @@ def render_login_screen() -> None:
 
     tab_demo, tab_manual = st.tabs(
         [
-            "🚀 1-Click Demo Personas (Reviewer Mode)",
-            "🔐 Corporate Credential Sign In",
+            "One-Click Demo Personas (Reviewer Mode)",
+            "Corporate Credential Sign In",
         ]
     )
 
     with tab_demo:
         st.markdown(
             "<p style='text-align: center; color: #94a3b8; font-size: 0.92rem; margin-bottom: 20px;'>"
-            "Select any organizational role below to immediately test its permissions, restricted views, and operational capabilities."
+            "Select an organizational role below to immediately test its permissions, restricted views, and operational capabilities."
             "</p>",
             unsafe_allow_html=True,
         )
@@ -837,25 +846,27 @@ def render_login_screen() -> None:
                     f"""
                     <div class="persona-card">
                         <div class="persona-header">
-                            <span class="persona-avatar">{user.avatar}</span>
                             <div>
-                                <h4 class="persona-name">{user.name}</h4>
+                                <span style="font-size: 0.70rem; font-weight: 800; padding: 2px 7px; border-radius: 4px; background: color-mix(in srgb, {role_meta['badge_color']} 18%, transparent); color: {role_meta['badge_color']}; border: 1px solid {role_meta['badge_color']};">
+                                    {getattr(user, 'badge_tag', 'USER')}
+                                </span>
+                                <h4 class="persona-name" style="margin-top: 6px;">{user.name}</h4>
                                 <p class="persona-title">{user.title}</p>
                             </div>
                         </div>
                         <div>
-                            <span class="persona-badge" style="background: color-mix(in srgb, {role_meta['badge_color']} 18%, transparent); color: {role_meta['badge_color']}; border: 1px solid {role_meta['badge_color']};">
+                            <span class="persona-badge" style="background: color-mix(in srgb, {role_meta['badge_color']} 15%, transparent); color: {role_meta['badge_color']}; border: 1px solid {role_meta['badge_color']};">
                                 {role_meta['badge']}
                             </span>
                         </div>
                         <p class="persona-desc">{role_meta['description']}</p>
-                        <div class="persona-cred">📧 {user.email}</div>
+                        <div class="persona-cred">Email: {user.email}</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
                 if st.button(
-                    f"⚡ Sign In as {user.role.value}",
+                    f"Sign In as {user.role.value}",
                     key=f"demo_login_{user.role.name}",
                     use_container_width=True,
                     type="primary" if user.role == UserRole.HR_ADMIN else "secondary",
@@ -894,7 +905,7 @@ def render_login_screen() -> None:
                     placeholder="Enter account password",
                 )
                 submit_login = st.form_submit_button(
-                    "🔐 Authenticate & Enter",
+                    "Authenticate & Sign In",
                     use_container_width=True,
                     type="primary",
                 )
@@ -914,7 +925,7 @@ def render_login_screen() -> None:
             st.markdown(
                 """
                 <div style="font-weight: 700; font-size: 1.15rem; margin-bottom: 4px;">
-                    🔑 Test Credentials Directory
+                    Test Credentials Directory
                 </div>
                 <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 16px;">
                     Pre-seeded test accounts for sandbox security verification.
@@ -923,10 +934,10 @@ def render_login_screen() -> None:
                 unsafe_allow_html=True,
             )
             cheat_data = [
-                {"Role": "👑 HR Admin", "Email": "admin@skillflow.com", "Password": "admin", "Scope": "Full Read/Write, SCD2, Dual-Write, DW Sync"},
-                {"Role": "👥 Dept Manager", "Email": "manager@skillflow.com", "Password": "manager", "Scope": "Team Analytics, Reviews, Projects"},
-                {"Role": "📊 Auditor", "Email": "auditor@skillflow.com", "Password": "audit", "Scope": "Strict Read-Only, DW Logs, SCD2 Audit"},
-                {"Role": "👤 Employee", "Email": "employee@skillflow.com", "Password": "emp", "Scope": "Self-Service Directory, Project Catalog"},
+                {"Role": "HR Administrator", "Email": "admin@skillflow.com", "Password": "admin", "Scope": "Full Read/Write, SCD2, Dual-Write, DW Sync"},
+                {"Role": "Department Manager", "Email": "manager@skillflow.com", "Password": "manager", "Scope": "Team Analytics, Reviews, Projects"},
+                {"Role": "Compliance Auditor", "Email": "auditor@skillflow.com", "Password": "audit", "Scope": "Strict Read-Only, DW Logs, SCD2 Audit"},
+                {"Role": "Standard Employee", "Email": "employee@skillflow.com", "Password": "emp", "Scope": "Self-Service Directory, Project Catalog"},
             ]
             st.dataframe(
                 pd.DataFrame(cheat_data),
@@ -935,7 +946,7 @@ def render_login_screen() -> None:
             )
 
     st.markdown("---")
-    st.caption("🔒 SkillFlow Enterprise Security Gateway • End-to-end Session RBAC Protection • Built with Streamlit & MySQL 8.0")
+    st.caption("SkillFlow Enterprise Security Gateway | End-to-end Session RBAC Protection | Built with Streamlit & MySQL 8.0")
 
 
 # Session State Initialization
@@ -960,7 +971,7 @@ role_info = RBAC.get_role_info(active_role)
 st.sidebar.markdown(
     """
     <div class="brand-container">
-        <div class="brand-icon">⚡</div>
+        <div class="brand-badge">SF</div>
         <div>
             <div class="brand-title">SkillFlow</div>
             <div class="brand-subtitle">Workforce Intelligence & DW</div>
@@ -975,7 +986,7 @@ st.sidebar.markdown(
     f"""
     <div class="user-card">
         <div class="user-card-header">
-            <span class="user-name">{current_user.avatar} {current_user.name}</span>
+            <span class="user-name">{current_user.name}</span>
             <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 12px; background: color-mix(in srgb, {role_info['badge_color']} 18%, transparent); color: {role_info['badge_color']}; font-weight: 700; border: 1px solid {role_info['badge_color']};">
                 {role_info['badge']}
             </span>
@@ -992,11 +1003,11 @@ st.sidebar.markdown(
 )
 
 # Rapid Persona Switcher (Enables live switching during evaluations)
-with st.sidebar.expander("⚡ Switch Demo Persona", expanded=False):
+with st.sidebar.expander("Switch Demo Persona", expanded=False):
     st.caption("Evaluate another role's permissions:")
     for email, demo_u in DEMO_USERS.items():
         is_current = demo_u.email == current_user.email
-        btn_label = f"{demo_u.avatar} {demo_u.name} ({demo_u.role.value}) {'✓' if is_current else ''}"
+        btn_label = f"{demo_u.name} ({demo_u.role.value}) {'[ACTIVE]' if is_current else ''}"
         if st.button(
             btn_label,
             key=f"sb_switch_{demo_u.role.name}",
@@ -1008,7 +1019,7 @@ with st.sidebar.expander("⚡ Switch Demo Persona", expanded=False):
             st.rerun()
 
 # Sign Out button
-if st.sidebar.button("🚪 Sign Out", use_container_width=True):
+if st.sidebar.button("Sign Out", use_container_width=True):
     st.session_state["authenticated"] = False
     st.session_state["current_user"] = None
     st.session_state["active_role"] = UserRole.HR_ADMIN
@@ -1022,9 +1033,19 @@ employees_mgr, projects_mgr, reviews_mgr, analytics_mgr = get_managers(
 
 connected = analytics_mgr.is_alive()
 if connected:
-    st.sidebar.caption("🟢 **Database:** MySQL 8.0 Connected")
+    st.sidebar.markdown(
+        "<div style='font-size: 0.8rem; opacity: 0.85; display: flex; align-items: center; gap: 6px; margin: 6px 0;'>"
+        "<span style='width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;'></span>"
+        "<b>Database:</b> MySQL 8.0 Connected</div>",
+        unsafe_allow_html=True,
+    )
 else:
-    st.sidebar.caption("🔴 **Database:** Connection Failed")
+    st.sidebar.markdown(
+        "<div style='font-size: 0.8rem; opacity: 0.85; display: flex; align-items: center; gap: 6px; margin: 6px 0;'>"
+        "<span style='width: 8px; height: 8px; border-radius: 50%; background: #ef4444; display: inline-block;'></span>"
+        "<b>Database:</b> Connection Failed</div>",
+        unsafe_allow_html=True,
+    )
 
 PAGE_HOME = "Dashboard"
 PAGE_EMPLOYEES = "Employees"
@@ -1073,7 +1094,26 @@ if not connected:
 
 if page == PAGE_HOME:
     st.title("Executive Dashboard")
-    st.caption("All figures come from the star schema via the vw_* views.")
+    role_meta = RBAC.get_role_info(active_role)
+    st.markdown(
+        f"""
+        <div style="background: color-mix(in srgb, {role_meta['badge_color']} 10%, transparent); border: 1px solid color-mix(in srgb, {role_meta['badge_color']} 30%, transparent); border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <span style="font-weight: 700; font-size: 0.88rem; color: {role_meta['badge_color']}; text-transform: uppercase; letter-spacing: 0.5px;">
+                    {role_meta['title']} View
+                </span>
+                <span style="font-size: 0.84rem; opacity: 0.85; margin-left: 10px;">
+                    {role_meta['description']}
+                </span>
+            </div>
+            <span style="font-size: 0.72rem; padding: 3px 9px; border-radius: 12px; font-weight: 700; background: color-mix(in srgb, {role_meta['badge_color']} 20%, transparent); color: {role_meta['badge_color']};">
+                {role_meta['badge']}
+            </span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.caption("All figures are computed live from the Kimball Star Schema via dimensional views.")
 
     kpi = analytics_mgr.kpi_summary()
 
@@ -1360,6 +1400,106 @@ if page == PAGE_HOME:
         f"{projects_frame['company_avg_score'].iloc[0] if not projects_frame.empty else '-'}"
     )
 
+    st.divider()
+
+    # ---------------- Chart 5: Department Workforce Growth (SCD Type 2 Timeline) ----------------
+    st.subheader("Department Workforce Growth & Headcount Evolution (SCD Type 2 Timeline)")
+    st.caption("Point-in-time annual headcount distribution and compensation progression powered by dim_employee version history.")
+
+    hc_history = analytics_mgr.department_headcount_history()
+    if hc_history.empty:
+        empty_state("No historical headcount data available.")
+    else:
+        hc_col1, hc_col2 = st.columns(2)
+
+        with hc_col1:
+            st.markdown("<p style='font-weight: 600; font-size: 0.88rem; margin-bottom: 6px;'>Historical Headcount Scaling by Department</p>", unsafe_allow_html=True)
+            hc_fig = px.bar(
+                hc_history,
+                x="snapshot_year",
+                y="headcount",
+                color="DepartmentName",
+                barmode="stack",
+                labels={"snapshot_year": "Snapshot Year", "headcount": "Total Headcount", "DepartmentName": "Department"},
+                color_discrete_sequence=PALETTE,
+            )
+            hc_fig.update_layout(
+                height=380,
+                margin=dict(l=10, r=10, t=10, b=10),
+                legend=dict(orientation="h", yanchor="bottom", y=-0.35, xanchor="center", x=0.5, font=dict(size=9)),
+            )
+            st.plotly_chart(hc_fig, width="stretch")
+
+        with hc_col2:
+            st.markdown("<p style='font-weight: 600; font-size: 0.88rem; margin-bottom: 6px;'>Average Monthly Salary Progression</p>", unsafe_allow_html=True)
+            sal_fig = px.line(
+                hc_history,
+                x="snapshot_year",
+                y="avg_salary",
+                color="DepartmentName",
+                markers=True,
+                labels={"snapshot_year": "Snapshot Year", "avg_salary": "Avg Monthly Salary", "DepartmentName": "Department"},
+                color_discrete_sequence=PALETTE,
+            )
+            sal_fig.update_layout(
+                height=380,
+                margin=dict(l=10, r=10, t=10, b=10),
+                showlegend=False,
+            )
+            st.plotly_chart(sal_fig, width="stretch")
+
+    st.divider()
+
+    # ---------------- Chart 6: Department Performance & Promotion Scorecard ----------------
+    st.subheader("Department Performance & Promotion Scorecard")
+    st.caption("Cross-departmental performance benchmarking, review volumes, and promotion mobility rates.")
+
+    scorecard = analytics_mgr.department_scorecard()
+    if scorecard.empty:
+        empty_state("No department scorecard data available.")
+    else:
+        sc_col1, sc_col2 = st.columns(2)
+
+        with sc_col1:
+            st.markdown("<p style='font-weight: 600; font-size: 0.88rem; margin-bottom: 6px;'>Average Performance Score vs Promotions Awarded</p>", unsafe_allow_html=True)
+            sc_fig = px.bar(
+                scorecard.sort_values("avg_score", ascending=True),
+                x="avg_score",
+                y="department",
+                orientation="h",
+                color="promotions",
+                labels={"avg_score": "Avg Performance Score", "department": "", "promotions": "Promotions Recommended"},
+                color_continuous_scale="Blues",
+            )
+            sc_fig.update_layout(
+                height=380,
+                margin=dict(l=10, r=10, t=10, b=10),
+            )
+            st.plotly_chart(sc_fig, width="stretch")
+
+        with sc_col2:
+            st.markdown("<p style='font-weight: 600; font-size: 0.88rem; margin-bottom: 6px;'>Department Executive Benchmark Table</p>", unsafe_allow_html=True)
+            sc_display = scorecard[[
+                "dept_rank", "department", "reviews", "employees_reviewed",
+                "avg_score", "avg_rating", "promotions", "leaver_review_pct"
+            ]].copy()
+            sc_display.columns = [
+                "Rank", "Department", "Reviews", "Reviewed Staff",
+                "Avg Score", "Rating", "Promotions", "Leaver Reviews %"
+            ]
+            st.dataframe(
+                sc_display,
+                width="stretch",
+                hide_index=True,
+                height=380,
+                column_config={
+                    "Rank": st.column_config.NumberColumn(format="%d"),
+                    "Avg Score": st.column_config.NumberColumn(format="%.2f"),
+                    "Rating": st.column_config.NumberColumn(format="%.2f / 5.0"),
+                    "Leaver Reviews %": st.column_config.NumberColumn(format="%.2f %%"),
+                },
+            )
+
 
 # ==========================================================================
 # [PAGE 2: EMPLOYEE DIRECTORY, ONBOARDING & SCD TYPE 2 TRANSFERS]
@@ -1447,11 +1587,11 @@ elif page == PAGE_EMPLOYEES:
             st.markdown(
                 f"""
                 <div class="rbac-restricted-box">
-                    <div class="rbac-restricted-title">🔒 Access Restricted: Onboarding Disabled</div>
+                    <div class="rbac-restricted-title"> Access Restricted: Onboarding Disabled</div>
                     <p class="rbac-restricted-desc">
-                        Adding new personnel requires <strong>👑 HR Administrator</strong> privileges.<br/>
+                        Adding new personnel requires <strong> HR Administrator</strong> privileges.<br/>
                         Your active role (<strong>{role_info['title']}</strong>) operates in <em>{role_info['badge']}</em> mode.
-                        Switch to <strong>👑 HR Administrator</strong> in the sidebar to onboard new employees.
+                        Switch to <strong> HR Administrator</strong> in the sidebar to onboard new employees.
                     </p>
                 </div>
                 """,
@@ -1650,9 +1790,9 @@ elif page == PAGE_EMPLOYEES:
                 st.markdown(
                     f"""
                     <div class="rbac-restricted-box">
-                        <div class="rbac-restricted-title">🔒 Access Restricted: Department Transfer Locked</div>
+                        <div class="rbac-restricted-title"> Access Restricted: Department Transfer Locked</div>
                         <p class="rbac-restricted-desc">
-                            Executing SCD Type 2 employee transfers requires <strong>👑 HR Administrator</strong> or <strong>👥 Department Manager</strong> permissions.<br/>
+                            Executing SCD Type 2 employee transfers requires <strong> HR Administrator</strong> or <strong> Department Manager</strong> permissions.<br/>
                             Your active role (<strong>{role_info['title']}</strong>) is restricted to read-only analytical mode.
                         </p>
                     </div>
@@ -1784,9 +1924,9 @@ elif page == PAGE_PROJECTS:
             st.markdown(
                 f"""
                 <div class="rbac-restricted-box">
-                    <div class="rbac-restricted-title">🔒 Access Restricted: Project Creation Locked</div>
+                    <div class="rbac-restricted-title"> Access Restricted: Project Creation Locked</div>
                     <p class="rbac-restricted-desc">
-                        Registering organizational projects requires <strong>👑 HR Administrator</strong> privileges.<br/>
+                        Registering organizational projects requires <strong> HR Administrator</strong> privileges.<br/>
                         Your active role (<strong>{role_info['title']}</strong>) is restricted from adding new projects.
                     </p>
                 </div>
@@ -1862,9 +2002,9 @@ elif page == PAGE_PROJECTS:
             st.markdown(
                 f"""
                 <div class="rbac-restricted-box">
-                    <div class="rbac-restricted-title">🔒 Access Restricted: Staffing Allocation Locked</div>
+                    <div class="rbac-restricted-title"> Access Restricted: Staffing Allocation Locked</div>
                     <p class="rbac-restricted-desc">
-                        Allocating employees to projects requires <strong>👑 HR Administrator</strong> or <strong>👥 Department Manager</strong> permissions.<br/>
+                        Allocating employees to projects requires <strong> HR Administrator</strong> or <strong> Department Manager</strong> permissions.<br/>
                         Your active role (<strong>{role_info['title']}</strong>) is restricted to read-only project monitoring.
                     </p>
                 </div>
@@ -2012,9 +2152,9 @@ elif page == PAGE_REVIEWS:
             st.markdown(
                 f"""
                 <div class="rbac-restricted-box">
-                    <div class="rbac-restricted-title">🔒 Access Restricted: Appraisal Submission Locked</div>
+                    <div class="rbac-restricted-title"> Access Restricted: Appraisal Submission Locked</div>
                     <p class="rbac-restricted-desc">
-                        Submitting performance appraisals requires <strong>👑 HR Administrator</strong> or <strong>👥 Department Manager</strong> permissions.<br/>
+                        Submitting performance appraisals requires <strong> HR Administrator</strong> or <strong> Department Manager</strong> permissions.<br/>
                         Your active role (<strong>{role_info['title']}</strong>) is restricted to read-only review history exploration.
                     </p>
                 </div>
@@ -2349,9 +2489,9 @@ elif page == PAGE_WAREHOUSE:
                 st.markdown(
                     f"""
                     <div class="rbac-restricted-box">
-                        <div class="rbac-restricted-title">🔒 ETL Maintenance Locked</div>
+                        <div class="rbac-restricted-title"> ETL Maintenance Locked</div>
                         <p class="rbac-restricted-desc">
-                            Triggering on-demand warehouse delta synchronization requires <strong>👑 HR Administrator</strong> credentials.<br/>
+                            Triggering on-demand warehouse delta synchronization requires <strong> HR Administrator</strong> credentials.<br/>
                             Your active role (<strong>{role_info['title']}</strong>) is restricted from executing database ETL procedures.
                         </p>
                     </div>

@@ -10,7 +10,7 @@
 [![Security](https://img.shields.io/badge/Security-RBAC%20Enabled-6A4C93?style=for-the-badge)](https://github.com/PratikModi22/SkillFlow)
 
 <p align="center">
-  <strong>A production-grade, three-tier enterprise workforce intelligence platform unifying operational HR transactions (OLTP) with analytical business intelligence (OLAP) via Kimball Star Schema and SCD Type 2 tracking.</strong>
+ <strong>A production-grade, three-tier enterprise workforce intelligence platform unifying operational HR transactions (OLTP) with analytical business intelligence (OLAP) via Kimball Star Schema and SCD Type 2 tracking.</strong>
 </p>
 
 [Key Features](#-key-features) • [Architecture](#-system-architecture) • [RBAC Security](#-role-based-access-control-rbac) • [Database Model](#-database-schema--dimensional-model) • [Getting Started](#-getting-started--installation)
@@ -19,7 +19,7 @@
 
 ---
 
-## 📌 Executive Summary
+## Executive Summary
 
 **SkillFlow** answers a fundamental enterprise challenge: **"What did the organization look like at any historical point in time, and what does it look like today?"**
 
@@ -31,22 +31,22 @@ Traditional operational HR systems overwrite past state whenever an employee is 
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 <!-- ================================================================= -->
-<!-- ARCHITECTURE DIAGRAM PLACEHOLDER:                                 -->
+<!-- ARCHITECTURE DIAGRAM PLACEHOLDER:                 -->
 <!-- Replace the image path below with your uploaded architecture diagram -->
-<!-- e.g., docs/architecture.png or your hosted image URL               -->
+<!-- e.g., docs/architecture.png or your hosted image URL        -->
 <!-- ================================================================= -->
 
 <div align="center">
-  <img width="1171" height="492" alt="Screenshot 2026-10-07 102224" src="https://github.com/user-attachments/assets/bb82ef42-a025-4cf2-b27b-4eefb4a83567" />
+ <img width="1171" height="492" alt="Screenshot 2026-10-07 102224" src="https://github.com/user-attachments/assets/bb82ef42-a025-4cf2-b27b-4eefb4a83567" />
 
-  <p><em>Figure 1: SkillFlow End-to-End Enterprise Architecture & Pipeline</em></p>
+ <p><em>Figure 1: SkillFlow End-to-End Enterprise Architecture & Pipeline</em></p>
 </div>
 
 <!-- ================================================================= -->
-<!-- END ARCHITECTURE DIAGRAM PLACEHOLDER                              -->
+<!-- END ARCHITECTURE DIAGRAM PLACEHOLDER               -->
 <!-- ================================================================= -->
 
 ### Architectural Pipeline Breakdown:
@@ -59,44 +59,44 @@ Traditional operational HR systems overwrite past state whenever an employee is 
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
 * **Real-Time Dual-Writeback:** Adding an employee or executing a department transfer through the UI updates the OLTP table and appends a versioned `dim_employee` record atomically within the same database transaction.
 * **Point-in-Time SCD Type 2 Versioning:** When an employee transfers departments or roles, their active version is closed (`IsCurrent = 0`, sets `EffectiveEndDate`) and a new open record (`IsCurrent = 1`) is appended.
 * **Interactive Executive Dashboard:**
-  * **YoY Performance Trend:** Uses SQL `LAG()` window functions to evaluate company-wide appraisal trajectory.
-  * **Department Leaderboard:** Computes top performers using SQL `DENSE_RANK()`.
-  * **Attrition Risk Analysis:** Multi-factor risk scoring identifying organizational turnover flight risks.
-  * **Project Bottleneck Detection:** Real-time capacity overload identification for overallocated teams.
+ * **YoY Performance Trend:** Uses SQL `LAG()` window functions to evaluate company-wide appraisal trajectory.
+ * **Department Leaderboard:** Computes top performers using SQL `DENSE_RANK()`.
+ * **Attrition Risk Analysis:** Multi-factor risk scoring identifying organizational turnover flight risks.
+ * **Project Bottleneck Detection:** Real-time capacity overload identification for overallocated teams.
 * **Workload Capacity Guard (100% Ceiling):** Prevents project managers from allocating more than 100% cumulative bandwidth to any employee across concurrent projects.
 * **Automated SMTP Notifications:** Dispatches non-blocking email confirmations to team members upon project assignment.
 * **Automated Delta Sync & Reconciliation:** Pre-built stored procedures (`sp_reconcile_dw`) audit database integrity and resolve data drift without requiring full warehouse rebuilds.
 
 ---
 
-## 🔐 Role-Based Access Control (RBAC) & Authentication Portal
+## Role-Based Access Control (RBAC) & Authentication Portal
 
 SkillFlow enforces a comprehensive four-tier security architecture implemented in `src/rbac.py` and guarded at both the presentation layer and the Data Access Layer (DAL). Unauthorized requests are completely blocked by an authentication session gate (`st.session_state['authenticated']`).
 
-### 🚀 1-Click Demo Personas & Corporate Test Accounts
+### 1-Click Demo Personas & Corporate Test Accounts
 The application gateway features an authentic login screen with both **1-click evaluator persona cards** and corporate credential login:
 
 | Role | Corporate Email | Password | Access Scope & Allowed Pages | Key Capabilities |
 | :--- | :--- | :--- | :--- | :--- |
-| **👑 HR Administrator** | `admin@skillflow.com` | `admin` | `Dashboard`, `Employees`, `Projects`, `Reviews`, `Warehouse` | **Full Read & Write**: Onboard employees (atomic dual-write), SCD2 department transfers, create projects, assign staff, submit reviews, and trigger warehouse delta syncs. |
-| **👥 Department Manager** | `manager@skillflow.com` | `manager` | `Dashboard`, `Employees`, `Projects`, `Reviews` | **Operational Management**: View team performance, transfer department staff, assign project capacity, and conduct appraisals. Protected from DW maintenance. |
-| **📊 Data Analyst (Auditor)** | `auditor@skillflow.com` | `audit` | `Dashboard`, `Employees`, `Projects`, `Reviews`, `Warehouse` | **Strict Read-Only Audit**: Complete visibility across all dashboards, historical review trends, SCD2 audit trails, and reconciliation logs. All write forms are locked. |
-| **👤 Standard Employee** | `employee@skillflow.com` | `emp` | `Employees` (Directory) & `Projects` (Rosters) | **Self-Service**: View company directory, assigned project rosters, and personal profile. Executive metrics and data warehouse internals are hidden. |
+| ** HR Administrator** | `admin@skillflow.com` | `admin` | `Dashboard`, `Employees`, `Projects`, `Reviews`, `Warehouse` | **Full Read & Write**: Onboard employees (atomic dual-write), SCD2 department transfers, create projects, assign staff, submit reviews, and trigger warehouse delta syncs. |
+| ** Department Manager** | `manager@skillflow.com` | `manager` | `Dashboard`, `Employees`, `Projects`, `Reviews` | **Operational Management**: View team performance, transfer department staff, assign project capacity, and conduct appraisals. Protected from DW maintenance. |
+| ** Data Analyst (Auditor)** | `auditor@skillflow.com` | `audit` | `Dashboard`, `Employees`, `Projects`, `Reviews`, `Warehouse` | **Strict Read-Only Audit**: Complete visibility across all dashboards, historical review trends, SCD2 audit trails, and reconciliation logs. All write forms are locked. |
+| ** Standard Employee** | `employee@skillflow.com` | `emp` | `Employees` (Directory) & `Projects` (Rosters) | **Self-Service**: View company directory, assigned project rosters, and personal profile. Executive metrics and data warehouse internals are hidden. |
 
-> **Evaluator Live Persona Switcher:** Once logged in, the sidebar includes an active profile card and a collapsible **"⚡ Switch Demo Persona"** widget, allowing reviewers to jump between roles dynamically without signing out.
+> **Evaluator Live Persona Switcher:** Once logged in, the sidebar includes an active profile card and a collapsible **" Switch Demo Persona"** widget, allowing reviewers to jump between roles dynamically without signing out.
 
 ---
 
-## 🗄️ Database Schema & Dimensional Model
+## Database Schema & Dimensional Model
 
 ### Dimensions & Facts:
 * **`dim_employee` (SCD Type 2):** Tracks employee versions across time.
-  * Key columns: `EmployeeSK` (Surrogate Primary Key), `EmployeeID` (Natural Key), `EffectiveStartDate`, `EffectiveEndDate`, `IsCurrent`, `DepartmentID`, `JobRole`, `MonthlyIncome`.
+ * Key columns: `EmployeeSK` (Surrogate Primary Key), `EmployeeID` (Natural Key), `EffectiveStartDate`, `EffectiveEndDate`, `IsCurrent`, `DepartmentID`, `JobRole`, `MonthlyIncome`.
 * **`dim_department` (SCD Type 1):** Department master table with in-place updates.
 * **`dim_project` (SCD Type 1):** Organizational project registry and statuses.
 * **`dim_date`:** Conformed date dimension spanning 3,000+ calendar days with year, quarter, month, week, and weekend flags.
@@ -110,7 +110,7 @@ The application gateway features an authentic login screen with both **1-click e
 
 ---
 
-## 💻 Tech Stack
+## Tech Stack
 
 | Layer | Component | Version | Description |
 | :--- | :--- | :--- | :--- |
@@ -125,51 +125,51 @@ The application gateway features an authentic login screen with both **1-click e
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 SkillFlow/
-├── .devcontainer/                 # Pre-configured GitHub Codespaces environment
-├── .github/                       # GitHub Actions CI workflow & PR template
-│   ├── workflows/ci.yml           # Automated linting and Python compilation CI
-│   └── pull_request_template.md   # Standard pull request checklist
-├── database/                      # SQL DDL, ETL Procedures, Views & Indexes
-│   ├── 01_create_database.sql     # Database instantiation
-│   ├── 02_create_staging.sql      # Staging tables DDL
-│   ├── 03_create_oltp.sql         # 3NF Operational schema
-│   ├── 04_create_dw.sql           # Kimball Star Schema dimensional DDL
-│   ├── 05_etl_staging_to_oltp.sql # Staging to OLTP transformation
-│   ├── 06_etl_oltp_to_dw.sql      # OLTP to OLAP warehouse ETL procedures
-│   ├── 07_dashboard_queries.sql   # Analytical SQL views (LAG, DENSE_RANK)
-│   ├── 08_create_indexes.sql      # B-tree performance indexing
-│   ├── 09_alter_fixed_columns.sql # Fixed CHAR column alignments
-│   └── 10_incremental_loads.sql   # Delta sync and reconciliation views
-├── diagrams/                      # System architecture and ER models
-│   ├── olap_star_schema.drawio    # Star Schema diagram file
-│   └── oltp_er_diagram.drawio     # OLTP Relational schema diagram
-├── etl/                           # Python ETL orchestration scripts
-│   ├── load_staging.py            # Chunked CSV staging loader
-│   └── run_pipeline.py            # Automated end-to-end database pipeline runner
-├── src/                           # Core Application Backend & DAL
-│   ├── dal/                       # Data Access Layer (DAL)
-│   │   ├── analytics_dal.py       # Analytical view queries & reconciliation
-│   │   ├── employee_dal.py        # Employee CRUD & SCD2 transfer invocations
-│   │   ├── project_dal.py         # Project management & allocation guard
-│   │   └── review_dal.py          # Appraisal submission & duplicate checks
-│   ├── models/                    # Domain entity data classes
-│   ├── db_manager.py              # Singleton connection pool & Base Manager
-│   ├── exceptions.py              # Custom typed application exception hierarchy
-│   ├── notifications.py           # SMTP mailer for project allocations
-│   ├── rbac.py                    # Role-Based Access Control logic & permissions
-│   └── validation.py              # Field validators & input sanitizers
-├── app.py                         # Streamlit presentation layer & UI
-├── requirements.txt               # Pinned project dependencies
-└── synthetic_data_generator.py    # Deterministic HR dataset synthesizer
+├── .devcontainer/         # Pre-configured GitHub Codespaces environment
+├── .github/            # GitHub Actions CI workflow & PR template
+│  ├── workflows/ci.yml      # Automated linting and Python compilation CI
+│  └── pull_request_template.md  # Standard pull request checklist
+├── database/           # SQL DDL, ETL Procedures, Views & Indexes
+│  ├── 01_create_database.sql   # Database instantiation
+│  ├── 02_create_staging.sql   # Staging tables DDL
+│  ├── 03_create_oltp.sql     # 3NF Operational schema
+│  ├── 04_create_dw.sql      # Kimball Star Schema dimensional DDL
+│  ├── 05_etl_staging_to_oltp.sql # Staging to OLTP transformation
+│  ├── 06_etl_oltp_to_dw.sql   # OLTP to OLAP warehouse ETL procedures
+│  ├── 07_dashboard_queries.sql  # Analytical SQL views (LAG, DENSE_RANK)
+│  ├── 08_create_indexes.sql   # B-tree performance indexing
+│  ├── 09_alter_fixed_columns.sql # Fixed CHAR column alignments
+│  └── 10_incremental_loads.sql  # Delta sync and reconciliation views
+├── diagrams/           # System architecture and ER models
+│  ├── olap_star_schema.drawio  # Star Schema diagram file
+│  └── oltp_er_diagram.drawio   # OLTP Relational schema diagram
+├── etl/              # Python ETL orchestration scripts
+│  ├── load_staging.py      # Chunked CSV staging loader
+│  └── run_pipeline.py      # Automated end-to-end database pipeline runner
+├── src/              # Core Application Backend & DAL
+│  ├── dal/            # Data Access Layer (DAL)
+│  │  ├── analytics_dal.py    # Analytical view queries & reconciliation
+│  │  ├── employee_dal.py    # Employee CRUD & SCD2 transfer invocations
+│  │  ├── project_dal.py     # Project management & allocation guard
+│  │  └── review_dal.py     # Appraisal submission & duplicate checks
+│  ├── models/          # Domain entity data classes
+│  ├── db_manager.py       # Singleton connection pool & Base Manager
+│  ├── exceptions.py       # Custom typed application exception hierarchy
+│  ├── notifications.py      # SMTP mailer for project allocations
+│  ├── rbac.py          # Role-Based Access Control logic & permissions
+│  └── validation.py       # Field validators & input sanitizers
+├── app.py             # Streamlit presentation layer & UI
+├── requirements.txt        # Pinned project dependencies
+└── synthetic_data_generator.py  # Deterministic HR dataset synthesizer
 ```
 
 ---
 
-## 🛠️ Getting Started & Installation
+## Getting Started & Installation
 
 ### Prerequisites:
 * **MySQL Server 8.0+** running locally (or remote instance)
@@ -215,8 +215,8 @@ The complete end-to-end data pipeline is automated and verified via `etl/run_pip
 1. **Schema DDL & Stored Procedures**: Compiles staging, OLTP 3NF, Kimball Star Schema dimensions/facts, and analytical views (`02_create_staging.sql` to `07_dashboard_queries.sql` and `10_incremental_loads.sql`).
 2. **Chunked Staging Ingestion**: Loads raw synthesized CSVs into `stg_*` tables with batch control tracking (`stg_load_batches`).
 3. **Master ETL Stored Procedures**:
-   - `CALL sp_load_oltp_master()`: Migrates clean staging records into normalized 3NF OLTP tables (`departments`, `employees`, `projects`, `performance_reviews`).
-   - `CALL sp_load_dw_master()`: Populates Kimball dimensions (`dim_department`, `dim_project`, `dim_employee` with SCD Type 2 tracking) and point-in-time fact table (`fact_performance_reviews`).
+  - `CALL sp_load_oltp_master()`: Migrates clean staging records into normalized 3NF OLTP tables (`departments`, `employees`, `projects`, `performance_reviews`).
+  - `CALL sp_load_dw_master()`: Populates Kimball dimensions (`dim_department`, `dim_project`, `dim_employee` with SCD Type 2 tracking) and point-in-time fact table (`fact_performance_reviews`).
 4. **Column Key Optimization**: Executes `09_alter_fixed_length_columns.sql` for fixed `CHAR` primary/foreign key performance alignments.
 5. **Analytical Index Tuning**: Applies `08_create_indexes.sql` to construct optimized B-tree compound indexes for fast view evaluations.
 6. **Automated Reconciliation**: Asserts dimensional invariants and compares OLTP row counts against Star Schema dimensions.
@@ -267,11 +267,11 @@ python etl/load_staging.py
 ```bash
 streamlit run app.py
 ```
-Open your browser at `http://localhost:8501`. Use one of the **1-click demo persona cards** (e.g. `👑 HR Admin`) to enter the dashboard.
+Open your browser at `http://localhost:8501`. Use one of the **1-click demo persona cards** (e.g. ` HR Admin`) to enter the dashboard.
 
 ---
 
-## 🔄 Git Flow & Collaboration
+## Git Flow & Collaboration
 
 This repository follows standard **Git Flow** conventions:
 
@@ -292,7 +292,7 @@ git push -u origin feature/custom-attrition-metric
 
 ---
 
-## 👤 Author & Maintainer
+## Author & Maintainer
 
 * **Developer:** [Pratik Modi](https://github.com/PratikModi22)
 * **Repository:** [https://github.com/PratikModi22/SkillFlow](https://github.com/PratikModi22/SkillFlow)
@@ -300,6 +300,6 @@ git push -u origin feature/custom-attrition-metric
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License.
