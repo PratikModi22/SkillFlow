@@ -408,13 +408,18 @@ def main() -> int:
 
     # Connect without selecting a schema: with --reset the database is
     # dropped and recreated by 01 itself, otherwise it must already exist.
-    connection = pymysql.connect(
-        host=url.host or "localhost",
-        port=url.port or 3306,
-        user=url.username,
-        password=url.password or "",
-        autocommit=True,
-    )
+    conn_kwargs = {
+        "host": url.host or "localhost",
+        "port": url.port or 3306,
+        "user": url.username,
+        "password": url.password or "",
+        "autocommit": True,
+    }
+    # Enable SSL automatically for cloud instances (e.g. Aiven, AWS RDS, DigitalOcean)
+    if "ssl" in url.query or "ssl_mode" in url.query or (url.host and url.host not in ("localhost", "127.0.0.1")):
+        conn_kwargs["ssl"] = {"check_hostname": False}
+
+    connection = pymysql.connect(**conn_kwargs)
 
     try:
         if args.reset:
